@@ -6,11 +6,12 @@ skill itself.
 
 ## Source of truth
 
-Skill content lives under **`skills/di-migration/`**:
+Each skill lives under **`skills/<name>/`** — `SKILL.md`, `evals/evals.json`,
+and `references/` (skill-specific files + generated copies of `shared/`):
 
-- `skills/di-migration/SKILL.md`
-- `skills/di-migration/references/*.md`
-- `skills/di-migration/evals/evals.json`
+- `skills/koin-setup/` — set up Koin (new, legacy, or alongside existing DI)
+- `skills/koin/` — write Koin code (core, everyday skill)
+- `skills/di-migration/` — move definitions from another DI framework, Koin KSP or Koin 3.x
 
 Plugin manifests live under **`.claude-plugin/`**:
 
@@ -22,9 +23,25 @@ Plugin manifests live under **`.claude-plugin/`**:
   becomes the `@marketplace` suffix; each `plugins[].name` must match the
   corresponding `plugin.json` `name`.
 
-There are **no root-level mirrors** of the skill files — the `.skill` bundle is
-zipped directly from `skills/di-migration/` into a flat layout. If you see a
+Content shared by every skill lives under **`shared/`** — one owner file per
+topic (`shared/index.md` lists them): `rules.md`, `principles.md`, `gradle.md`,
+`entry-points.md`, `scopes.md`, `koin-annotations.md`, `koin-safe-dsl.md`,
+`kotzilla.md`.
+
+**No duplication:** a SKILL.md holds its workflow and the decisions only that
+skill owns; every rule, API or version is written once in `shared/` and pointed
+to. Links to Koin docs use full `https://insert-koin.io/docs/...` URLs.
+
+`./build.sh` copies each `shared/*.md` into every `skills/*/references/` with a
+"GENERATED" header. **Edit `shared/`, never the copies**, then run `./build.sh`
+and commit the refreshed copies (the plugin installs straight from the repo, so
+the copies must be committed).
+
+There are **no root-level mirrors** of the skill files — each `.skill` bundle is
+zipped directly from `skills/<name>/` into a flat layout. If you see a
 stray `SKILL.md` or `references/` at the repo root, it's accidental — delete it.
+
+Local drafts go in `draft/` (git-ignored, never shipped).
 
 ## After any content change
 
@@ -69,7 +86,7 @@ heading must agree before running `./release.sh`.
 - Progressive migration is the recommended approach everywhere: create a new
   Koin module alongside the existing DI setup, move definitions feature by
   feature, never rewrite in place
-- For Hilt/Dagger sources, always mention the `koin-android-dagger` bridge for
+- For Hilt/Dagger sources, always mention the `koin-dagger-bridge` bridge for
   coexistence during migration
 - Runtime fixes / debugging / best-practice checks are delegated to the
   **Kotzilla MCP Server** (`https://mcp.kotzilla.io/mcp`) — don't duplicate that

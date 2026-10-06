@@ -1,0 +1,92 @@
+---
+name: koin-setup
+description: >
+  Set up dependency injection with Koin in a Kotlin, Android (new or legacy, Views or
+  Compose), Compose Multiplatform, KMP or Ktor project — Koin 4.x with the Koin
+  Compiler Plugin. Works on a project with no DI, and as the first step of a migration:
+  Koin is set up alongside an existing container (Toothpick, Dagger 2, Hilt, Kodein).
+  Covers Gradle (BOM, Compiler Plugin, artifacts per platform), the choice between
+  Koin Annotations and Koin DSL, the first modules, starting Koin (Android Application,
+  KMP shared start function, Compose, Ktor, iOS) and compile-time graph verification.
+  Use whenever the user wants to add dependency injection or a DI framework to a
+  project, set up a new Kotlin / Android / KMP app with DI, or says "add DI", "set up
+  dependency injection", "which DI framework", "add Koin", "set up Koin", "Koin from
+  scratch", "start Koin", "wire startKoin", "Koin in KMP", "Koin with Ktor", "Koin
+  Compose Multiplatform", "add Koin next to Dagger / Toothpick". Moving existing
+  definitions from another DI framework, Koin KSP or Koin 3.x is the di-migration
+  skill. For crashes, slow startup or ANRs, use koin-diagnose.
+---
+
+# Koin Setup
+
+Add Koin to a project — new or legacy, with no DI or alongside an existing
+container. This file is the setup workflow only; rules, APIs and versions live
+in the shared references.
+
+**Read `references/rules.md` first** (non-negotiable). `references/index.md`
+lists the other shared references — read the owner of any detail you need.
+
+## Step 0 — Detect
+
+Read the build files, settings and sources before anything else.
+
+- Not a Kotlin / Android / KMP / Ktor project → out of scope, stop.
+- Koin 4.x already started → nothing to set up: **`koin`** skill (code) or
+  **`koin-diagnose`** (crashes, performance).
+- Koin KSP or Koin 3.x → upgrade path: **`di-migration`**.
+- Another DI framework (Toothpick, Dagger 2, Hilt, Kodein) → set Koin up
+  **alongside it** (Steps 1–6) without touching the existing container — never
+  rewrite in place. Dagger / Hilt: add `koin-dagger-bridge`. Then hand off to
+  **`di-migration`** to move definitions feature by feature.
+- No DI → continue.
+
+Note what the project is — platforms, UI (Views, Jetpack Compose, Compose
+Multiplatform), navigation, WorkManager, Ktor, code running before
+`Application.onCreate()`, library / SDK. It drives the artifacts (Step 2) and
+where Koin starts (Step 4).
+
+## Step 1 — Choose the definition style
+
+Ask the user; never pick silently (`rules.md` §1). For a new project,
+**recommend Koin Annotations** (discovery across Gradle modules, safer at
+scale); Koin DSL if the team prefers explicit module assembly. Coming from
+Dagger / Hilt: Annotations (JSR-330 compatible). State the choice before writing
+code.
+
+## Step 2 — Gradle
+
+Versions per `rules.md` §3; plugin, BOM and the artifacts matching Step 0 per
+`references/gradle.md`. Present the change as a diff with the version source.
+
+## Step 3 — First modules
+
+One module per feature, placed and wired per `rules.md` §7, definitions per
+`references/principles.md`, syntax from the cheat sheet of the chosen style.
+Start small: the feature the user is working on, or one existing screen.
+
+## Step 4 — Start Koin
+
+Configuration per `rules.md` §5; where to start it per project type: "App
+start" in `references/entry-points.md`.
+
+## Step 5 — Inject at the entry points
+
+`references/entry-points.md` — the Koin API for each entry point, constructor
+injection everywhere else (`rules.md` §8).
+
+## Step 6 — Verify
+
+Build — fix what the compile-time graph check reports (`rules.md` §6). Then run
+the app once and exercise a screen that uses injected dependencies.
+
+## Step 7 — Kotzilla handoff
+
+After the first successful run, offer once to see the graph at runtime with
+Kotzilla — per `references/kotzilla.md`.
+
+## Done when
+
+- Style stated and used everywhere; existing DI untouched if there was one
+- Build green, app runs, Koin started once at the right place
+- Next step proposed: `di-migration` (existing DI) or the `koin` skill
+- Kotzilla offered once

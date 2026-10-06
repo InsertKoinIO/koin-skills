@@ -1,6 +1,6 @@
 # Koin DSL → Koin 4.x Safe DSL + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-safe-dsl.md`](koin-safe-dsl.md) → "Setup" for the standard Gradle block and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Why Migrate](#why-migrate)
@@ -37,7 +37,7 @@ compile time, giving you:
 The key insight: you keep the DSL module approach but replace `singleOf(::Class)` or
 `single { Class(get()) }` with `single<Class>()`. The compiler plugin does the rest.
 
-Requires Kotlin ≥ 2.3.20 (K2) and Koin 4.2.1+.
+Versions: `references/rules.md` §3.
 
 ## Core DSL Mapping
 
@@ -54,7 +54,7 @@ Requires Kotlin ≥ 2.3.20 (K2) and Koin 4.2.1+.
 | `scopedOf(::MyClass)`                               | `scoped<MyClass>()`                                  |
 | `worker { MyWorker(get(), get(), get()) }`          | `worker<MyWorker>()`                                 |
 | `singleOf(::Impl) { bind<Interface>() }`            | `single<Impl>().withOptions { bind<Interface>() }`   |
-| `singleOf(::Impl) { named("x") }`                  | `single<Impl>(named("x"))`                           |
+| `singleOf(::Impl) { named("x") }`                  | `@Named("x")` on the class + `single<Impl>()`        |
 | `singleOf(::Impl) { createdAtStart() }`             | `single<Impl>().withOptions { createdAtStart() }`    |
 | `single(named("x")) { Dispatchers.IO }`            | `single(named("x")) { Dispatchers.IO }` (unchanged for lambdas with custom logic) |
 | `module { includes(other) }`                        | `module { includes(other) }` (unchanged)              |
@@ -78,24 +78,7 @@ dependencies {
 
 ### After (Koin 4.x + Compiler Plugin)
 
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")
-}
-
-// Optional configuration
-koinCompiler {
-    compileSafety = true        // Validate dependency graph at compile time (default: true)
-    userLogs = true             // See detected components in build output
-    skipDefaultValues = true    // Skip params with default values (default: true)
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ### How it works
@@ -346,12 +329,12 @@ val activityModule = module {
 
 Usage in Activity/Fragment:
 ```kotlin
-class MainActivity : AppCompatActivity(), KoinScopeComponent {
+class MainActivity : AppCompatActivity(), AndroidScopeComponent {
     override val scope: Scope by activityScope()
     private val presenter: ActivityPresenter by inject()
 }
 
-class DetailFragment : Fragment(), KoinScopeComponent {
+class DetailFragment : Fragment(), AndroidScopeComponent {
     override val scope: Scope by fragmentScope()
     private val presenter: FragmentPresenter by inject()
 }
@@ -628,17 +611,11 @@ Missing dependencies produce standard Kotlin compiler errors:
 e: Missing definition for type 'ApiService' required by 'UserRepository'
 ```
 
-### Runtime verification (optional safety net)
+### Runtime verification
 
-```kotlin
-@Test
-fun verifyKoinModules() {
-    koinApplication {
-        modules(appModule)
-        checkModules()
-    }
-}
-```
+Not needed: the compile-time check replaces it. `checkModules()` and `verify()`
+are on their way to deprecation — remove existing ones once the Compiler Plugin
+is in place.
 
 ## Common Pitfalls
 
@@ -688,18 +665,11 @@ val module = module {
 
 ### 4. Forgetting the compiler plugin in build.gradle.kts
 
-```kotlin
-// WRONG — single<T>() without the plugin is just a regular Koin call
-// It will compile but won't have compile-time validation
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-}
-
-// RIGHT — add the plugin for compile-time transformation
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-```
+Without `id("io.insert-koin.compiler.plugin")`, Safe DSL code (`single<T>()`,
+`create(::T)`, `startKoin<App>`…) compiles but **fails at runtime** with
+`NotImplementedError` — these functions are stubs the plugin replaces at build
+time. Apply the plugin in every Gradle module that declares Koin definitions
+(`references/gradle.md`).
 
 ### 5. Mixing scopes incorrectly
 

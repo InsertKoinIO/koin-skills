@@ -111,7 +111,7 @@ claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp
 ## Requirements
 
 - Kotlin ≥ 2.3.20 (K2 compiler)
-- Koin 4.2.1+
+- Koin 4.2.2+
 
 ## Contributing
 

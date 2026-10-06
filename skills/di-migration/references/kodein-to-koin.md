@@ -1,6 +1,6 @@
 # Kodein → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-safe-dsl.md`](koin-safe-dsl.md) → "Setup" for the standard Gradle block and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)
@@ -22,7 +22,7 @@
 
 Do **not** rewrite existing Kodein modules in place. Instead:
 
-1. Create a new empty Koin module (e.g. `appKoinModule`) and call `startKoin { modules(appKoinModule) }`
+1. Set Koin up **alongside** the existing container — the `koin-setup` skill (Gradle, style, start)
 2. Keep the existing Kodein `DI` container running for everything not yet migrated
 3. Move definitions from Kodein modules into the Koin module **one feature at a time**
 4. At each call site, swap `by instance()` / `direct.instance()` for `by inject()` / `get()` only for the bindings already moved
@@ -63,7 +63,7 @@ Mappings target **Safe DSL + Koin Compiler Plugin** (no annotations for Kodein):
 | `subDI(parentDI) { ... }`            | Multiple modules in `startKoin { modules(parent, child) }` |
 | `DIAware` interface on a class       | `KoinComponent` interface + `by inject()`             |
 | `androidXModule(app)`                | `androidContext(this@App)` in `startKoin { }`         |
-| `closestDI()` from Android `Context` | `getKoin()` (Android), `KoinContext { }` (Compose)    |
+| `closestDI()` from Android `Context` | `getKoin()` (Android), `koinInject()` (Compose)       |
 
 ---
 
@@ -74,19 +74,9 @@ Mappings target **Safe DSL + Koin Compiler Plugin** (no annotations for Kodein):
 implementation("org.kodein.di:kodein-di:<version>")
 implementation("org.kodein.di:kodein-di-framework-android-x:<version>")
 implementation("org.kodein.di:kodein-di-framework-compose:<version>")
-
-// ADD
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")             // Android
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")    // Compose
-}
 ```
+
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ---
@@ -319,7 +309,8 @@ withDI(di) {
 **Koin**
 
 ```kotlin
-KoinContext {
+@Composable
+fun Screen() {
     val repo: Repository = koinInject()
     val vm: MyViewModel = koinViewModel()
 }
@@ -378,13 +369,8 @@ val koinTestRule = KoinTestRule.create {
         single<FakeRepository>().bind<Repository>()  // overrides previous binding
     })
 }
-
-@Test
-fun `verify module graph`() = checkModules {
-    modules(appModule)
-}
 ```
 
-Prefer the **Koin Compiler Plugin's A1/A2/A3 verification layers** to catch missing
-bindings at compile time. `checkModules { }` (runtime) remains useful for DSL-only
-modules or as a belt-and-braces check in CI.
+Graph verification: the **Koin Compiler Plugin's A1/A2/A3 layers** catch missing
+bindings at compile time. Don't add `checkModules { }` / `verify()` — both are on
+their way to deprecation.

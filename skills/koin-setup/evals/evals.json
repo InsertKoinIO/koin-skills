@@ -1,0 +1,47 @@
+{
+  "skill_name": "koin-setup",
+  "evals": [
+    {
+      "id": 1,
+      "name": "android-compose-no-di-unnamed",
+      "prompt": "I have a new Android app with Jetpack Compose and a few ViewModels that create their repositories by hand. I'd like to add dependency injection. What should I do?",
+      "expected_output": "Triggers even though Koin is not named. Detects no existing DI. Asks the user to choose Annotations (recommended for new projects) or DSL before writing code. Gradle: Compiler Plugin + koin-bom, checks latest versions on Maven Central (defaults Koin 4.2.2 / plugin 1.2.1), adds only koin-core, koin-android, koin-compose, koin-compose-viewmodel (+ koin-annotations if Annotations). Modules per feature, constructor injection, ViewModels as @KoinViewModel or viewModel<T>(). Starts Koin in Application.onCreate (Annotations: @KoinApplication + startKoin<App>; DSL: one app module with includes). Compose screens use koinViewModel() as a default parameter. No KoinContext, no androidLogger unless needed, no checkModules/verify test, no KSP, no singleOf. Verifies by building (compile-time check) and running once, then offers Kotzilla once, asking first.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "kmp-compose-multiplatform",
+      "prompt": "Set up Koin in my Kotlin Multiplatform project (Android + iOS) using Compose Multiplatform for the UI. I prefer explicit modules, no annotations.",
+      "expected_output": "Uses the DSL style as asked (Safe DSL forms like single<T>() / viewModel<T>()). Gradle: koin-core, koin-compose, koin-compose-viewmodel in commonMain; koin-android in androidMain. One shared start function initApp() in commonMain that starts Koin with an app module including the feature modules; Android Application and iOS app init (InitAppKt.doInitApp()) call it, Android adding androidContext. Does not add KoinApplication() composable since Koin is started by initApp(). Mentions koinViewModel() in composables. No KSP, no KoinContext, no checkModules.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "existing-dagger-setup-alongside",
+      "prompt": "Add Koin to my legacy Android app (Activities and Fragments, no Compose). It currently uses Dagger 2 for its repositories.",
+      "expected_output": "Detects Dagger 2 in Step 0. Sets Koin up alongside Dagger without rewriting or removing Dagger code: Compiler Plugin + BOM, koin-core + koin-android (+ koin-annotations, Annotations suggested since it comes from Dagger / JSR-330), koin-dagger-bridge to resolve existing Dagger bindings. Starts Koin in Application.onCreate after the Dagger component. Activities/Fragments use by inject() / by viewModel() for Koin-provided objects. Then proposes the di-migration skill to move definitions feature by feature (progressive migration). No KSP, no KoinComponent in normal layers.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "ktor-server-annotations",
+      "prompt": "I'm building a Ktor server and want to use Koin with annotations for my services.",
+      "expected_output": "Annotations style. Gradle: Compiler Plugin, koin-bom, koin-core, koin-annotations, koin-ktor (+ koin-logger-slf4j only if logging is wanted). Services as @Singleton classes with constructor injection in a @Module @Configuration @ComponentScan module. Starts Koin with install(Koin) { withConfiguration<App>() } where App is the @KoinApplication type. Routes use the inject() extension, no KoinComponent. Notes the graph is compile-time checked.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "third-party-builders",
+      "prompt": "Set up Koin for my Android app (no DI yet, annotations please). I need Retrofit and OkHttp injected into my repositories.",
+      "expected_output": "Retrofit and OkHttp provided with function builders: @Singleton fun okHttpClient(): OkHttpClient and @Singleton fun retrofit(client: OkHttpClient): Retrofit inside a @Module. Repositories are @Singleton classes with constructor injection, auto-bound to their single interface. No classic lambda single { Retrofit.Builder()... }, no singleOf, no @Single (uses @Singleton).",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "legacy-views-app-no-di",
+      "prompt": "My old Android app uses Activities and Fragments with XML layouts, and everything is created by hand. Can we add DI to it?",
+      "expected_output": "Triggers without Koin being named. Works for a Views-based app: koin-android, no Compose artifacts. Asks for the style. Modules per feature with constructor injection. Starts Koin in Application.onCreate. Activities/Fragments use by viewModel() / by inject() / by activityViewModel() from koin-android, no KoinComponent. Custom Views: asks the user whether to pass dependencies from the host or use KoinComponent. Build = compile-time check, run once, offer Kotzilla.",
+      "files": []
+    }
+  ]
+}

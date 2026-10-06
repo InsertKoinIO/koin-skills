@@ -1,6 +1,6 @@
 # Koin 3.x → Koin 4.x Safe DSL + Koin Compiler Plugin Upgrade Reference
 
-> **Setup & minimum versions** — see [`koin-safe-dsl.md`](koin-safe-dsl.md) → "Setup" for the standard Gradle block and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Key Changes Overview](#key-changes)
@@ -24,7 +24,7 @@ Koin 4.x introduces:
 - **Zero generated files** — compiler plugin transforms inline during Kotlin compilation
 - **3-layer compile safety** — A1 (per-module), A2 (config groups), A3 (full graph)
 - **KMP-first** architecture — unified API across Android, iOS, Desktop, Server
-- **Simplified Compose** integration via `KoinContext`, `koinViewModel()`, `koinInject()`
+- **Simplified Compose** integration via `koinViewModel()`, `koinInject()`
 - **Scope archetypes** — `activityScope { }`, `fragmentScope { }`, `viewModelScope { }` DSL functions
 - **Kotzilla** observability hooks built into the runtime
 
@@ -44,21 +44,7 @@ dependencies {
 ```
 
 ### After (Koin 4.x + Compiler Plugin)
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")
-
-    // REMOVE if previously using KSP:
-    // implementation("io.insert-koin:koin-annotations:1.x")
-    // ksp("io.insert-koin:koin-ksp-compiler:1.x")
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 **If you can't upgrade to Kotlin ≥ 2.3.20**, use Koin 4.x without the compiler plugin:
@@ -66,7 +52,8 @@ dependencies {
 dependencies {
     implementation(platform("io.insert-koin:koin-bom:4.x.x"))
     implementation("io.insert-koin:koin-android")
-    implementation("io.insert-koin:koin-androidx-compose")
+    implementation("io.insert-koin:koin-compose")
+    implementation("io.insert-koin:koin-compose-viewmodel")
     implementation("io.insert-koin:koin-core")
 }
 // You keep singleOf(::Class) syntax — no compile-time safety, but 4.x API changes apply
@@ -74,19 +61,7 @@ dependencies {
 
 ## Compiler Plugin Setup
 
-```kotlin
-// build.gradle.kts
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-// Optional configuration
-koinCompiler {
-    compileSafety = true        // Validate dependency graph at compile time (default: true)
-    userLogs = true             // See detected components in build output
-    skipDefaultValues = true    // Skip params with defaults (default: true)
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 ### What the compiler plugin does
 - Transforms `single<T>()`, `factory<T>()`, `viewModel<T>()` calls into resolved constructor calls
@@ -274,36 +249,13 @@ val module = module {
 
 ## Parameter Resolution
 
-All constructor and function parameters are **handled automatically by the Koin Compiler**:
-`T`, `T?`, `Lazy<T>`, `List<T>` — just declare the type, the compiler does the rest.
-
-| 3.x (manual wiring)              | 4.x (Koin Compiler handles it)           |
-|-----------------------------------|-------------------------------------------|
-| `single { MyClass(get()) }`      | `single<MyClass>()` — `T` auto-resolved  |
-| `single { MyClass(getOrNull()) }`| `single<MyClass>()` — `T?` auto-resolved |
-| `single { MyClass(lazy { get() }) }` | `single<MyClass>()` — `Lazy<T>` auto-resolved |
-| `single { MyClass(getAll()) }`   | `single<MyClass>()` — `List<T>` auto-resolved |
-| `single { MyClass(get(named("x"))) }` | `single<MyClass>()` — `@Named("x")` on param |
-| `factory { p -> MyClass(p.get()) }` | `factory<MyClass>()` — `@InjectedParam` on param |
-
-No more writing `get()`, `getOrNull()`, `getAll()`, `get(named(...))` etc.
+Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-safe-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
 
 ## API Changes
 
 ### DSL syntax comparison table
 
-| Koin 3.x                                       | Koin 4.x Safe DSL                                    |
-|-------------------------------------------------|-------------------------------------------------------|
-| `single { MyClass(get()) }`                     | `single<MyClass>()`                                   |
-| `singleOf(::MyClass)`                           | `single<MyClass>()`                                   |
-| `factory { MyClass(get()) }`                    | `factory<MyClass>()`                                  |
-| `factoryOf(::MyClass)`                          | `factory<MyClass>()`                                  |
-| `viewModel { MyVM(get()) }`                     | `viewModel<MyVM>()`                                   |
-| `viewModelOf(::MyVM)`                           | `viewModel<MyVM>()`                                   |
-| `singleOf(::Impl) { bind<Iface>() }`           | `single<Impl>().withOptions { bind<Iface>() }`        |
-| `singleOf(::Impl) { named("x") }`              | `single<Impl>(named("x"))`                            |
-| `scope(named<MyActivity>()) { scoped {...} }`   | `scope<MyActivity> { scoped<MyClass>() }`             |
-| `single { thirdParty.create() }`               | `single { thirdParty.create() }` (unchanged)          |
+Same mapping as `references/dsl-to-compiler.md` → "Core DSL Mapping" (owner of the classic / autowire → Safe DSL table).
 
 ### Enum qualifiers (new in 4.x)
 
@@ -368,12 +320,12 @@ val activityModule = module {
 
 Usage in Activity/Fragment:
 ```kotlin
-class MainActivity : AppCompatActivity(), KoinScopeComponent {
+class MainActivity : AppCompatActivity(), AndroidScopeComponent {
     override val scope: Scope by activityScope()
     private val presenter: ActivityPresenter by inject()
 }
 
-class DetailFragment : Fragment(), KoinScopeComponent {
+class DetailFragment : Fragment(), AndroidScopeComponent {
     override val scope: Scope by fragmentScope()
     private val presenter: FragmentPresenter by inject()
 }
@@ -412,7 +364,7 @@ import org.koin.androidx.compose.getViewModel
 val viewModel = getViewModel<MainViewModel>()
 
 // 4.x
-import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.viewmodel.koinViewModel
 val viewModel = koinViewModel<MainViewModel>()
 ```
 
@@ -429,16 +381,23 @@ fun App() {
     }
 }
 
-// 4.x
+// 4.x — Android: startKoin in Application.onCreate(), nothing in the Compose tree
 @Composable
 fun App() {
-    KoinContext {
+    MainScreen()
+}
+
+// 4.x — Compose Multiplatform app started from Compose
+@Composable
+fun App() {
+    KoinApplication(configuration = koinConfiguration { modules(appModule) }) {
         MainScreen()
     }
 }
-// Note: startKoin {} is called in Application.onCreate()
-// KoinContext provides the Koin instance to the Compose tree
 ```
+
+Which start to use: `references/entry-points.md` ("Compose app start").
+`KoinContext` is deprecated — remove it.
 
 ### Inject in Composables
 
@@ -508,17 +467,11 @@ class MyTest : KoinTest {
     }
 }
 
-// 4.x — compile-time verification replaces runtime checks
-// The compiler plugin catches missing deps at build time.
-// Runtime checkModules() still available as safety net:
-@Test
-fun verifyModules() {
-    koinApplication {
-        modules(appModule)
-        checkModules()
-    }
-}
 ```
+
+4.x: the Koin Compiler Plugin verifies the graph at build time. Remove existing
+`checkModules()` tests — `checkModules()` and `verify()` are on their way to
+deprecation.
 
 ## Kotzilla Integration
 

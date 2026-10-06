@@ -3,6 +3,26 @@
 All notable changes to the **koin-migration** plugin are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+Work in progress toward 2.0.0 (plugin rename `koin-migration` → `koin`).
+
+### Added
+- `koin-setup` skill — set up Koin in a new or legacy project, or alongside an existing DI container
+- `koin` skill — write Koin code following the project's style and the Koin rules
+- `shared/` references used by every skill: rules, DI principles, Gradle, entry points, scopes, Kotzilla handoff
+
+### Changed
+- `di-migration` reads the shared references instead of owning duplicated rules; Kotzilla handoff is a step of the per-module validation loop
+- Default versions Koin 4.2.2 / Compiler Plugin 1.2.1, latest checked on Maven Central
+- Graph verification is compile-time (Compiler Plugin); `checkModules()` / `verify()` no longer emitted
+- Compose: `koin-compose` + `koin-compose-viewmodel`; `KoinContext` removed (deprecated)
+
+### Fixed
+- Hilt / Dagger bridge artifact is `koin-dagger-bridge` (`koin-android-dagger` doesn't exist)
+- Android scopes use `AndroidScopeComponent`
+- Safe DSL without the Compiler Plugin fails at runtime (stubs), not "compiles without checks"
+
 ## [1.0.0] - 2026-04-14
 
 Initial release.

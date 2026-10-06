@@ -1,41 +1,14 @@
+<!-- GENERATED from shared/koin-safe-dsl.md by build.sh — edit shared/koin-safe-dsl.md, not this copy -->
+
 # Koin Safe DSL + Compiler Plugin — Reference
 
-Concrete cheat sheet for the Safe DSL output used by Kodein / classic Koin DSL / Koin 3.x migrations. Cross-link target for the per-source references — they map source constructs to entries here.
+Concrete cheat sheet for **Koin Safe DSL + Compiler Plugin** code. Shared by every Koin skill (setup, core, migration, diagnose) — exact imports and syntax live here; don't infer them from memory.
 
 For depth, see https://insert-koin.io.
 
-## Setup (shared by every migration to Safe DSL output)
+## Setup
 
-**Minimum versions** (also enforced by SKILL.md rule #3):
-
-| Component             | Minimum     |
-|-----------------------|-------------|
-| Kotlin                | `2.3.20`    |
-| Koin                  | `4.2.1`     |
-| Koin Compiler Plugin  | `1.0.0-RC1` |
-
-Always try to resolve newer versions at Step 3 — minimums, not targets.
-
-**Standard Gradle block** (per-source references add only the deltas):
-
-```kotlin
-// build.gradle.kts
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation(platform("io.insert-koin:koin-bom:4.2.1"))
-    implementation("io.insert-koin:koin-core")
-    implementation("io.insert-koin:koin-android")              // Android
-    implementation("io.insert-koin:koin-androidx-compose")     // Compose
-    implementation("io.insert-koin:koin-androidx-workmanager") // Workers
-}
-```
-
-Note: `koin-annotations` is **not** required for Safe DSL output unless you mix
-in `@InjectedParam` / `@Named` / `@Qualifier` on classes — which most Safe DSL
-migrations do. When in doubt, include it.
+Gradle and versions: `references/gradle.md`. Policy (style choice, DSL forms, configuration): `references/rules.md`.
 
 ## Imports
 
@@ -53,12 +26,12 @@ migrations do. When in doubt, include it.
 | `startKoin { modules(...) }`                                                                        | `org.koin.core.context.startKoin`            | **Classic startKoin — use this for Safe DSL output.** The reified `startKoin<App>()` from `org.koin.plugin.module.dsl` is for `@KoinApplication` (annotations path) only. |
 | `.bind<T>()` on `KoinDefinition<*>`                                                                 | `org.koin.core.module.dsl.bind` *(extension)* | Interface binding (preferred shorthand). Verify with IDE auto-import |
 | `.withOptions { ... }`                                                                              | `org.koin.core.module.dsl.withOptions`       | Combine binding with other options                             |
-| `singleOf(::T)`, `factoryOf(::T)`, `viewModelOf(::T)`                                               | `org.koin.core.module.dsl.*`                 | **Legacy — fallback only. Prefer reified `single<T>()` etc.**  |
+| `singleOf(::T)`, `factoryOf(::T)`, `viewModelOf(::T)`                                               | `org.koin.core.module.dsl.*`                 | **Autowire DSL — supported, not for new code. Prefer `single<T>()`**  |
 | `named("x")`, `Qualifier`                                                                           | `org.koin.core.qualifier.*`                  | String + custom qualifiers                                     |
 | `parametersOf(...)`                                                                                 | `org.koin.core.parameter.parametersOf`       | Pass runtime params at retrieval                               |
 | `androidContext`, `androidLogger`                                                                   | `org.koin.android.ext.koin.*`                | Android startKoin DSL                                          |
-| `KoinContext`, `koinInject()`                                                                       | `org.koin.compose.*`                         | Compose injection                                              |
-| `koinViewModel()` (Compose retrieval)                                                               | `org.koin.androidx.compose.koinViewModel`    | Compose ViewModel                                              |
+| `koinInject()`                                                                       | `org.koin.compose.*`                         | Compose injection                                              |
+| `koinViewModel()` (Compose retrieval)                                                               | `org.koin.compose.viewmodel.koinViewModel` | Compose ViewModel                                              |
 | `workManagerFactory()` (startKoin DSL)                                                              | `org.koin.androidx.workmanager.koin.workManagerFactory` | WorkManager startKoin setup                       |
 | `KoinComponent`, `inject()`, `get()`                                                                | `org.koin.core.component.*`                  | For classes Koin doesn't construct — prefer constructor injection |
 
@@ -74,8 +47,9 @@ resolves every constructor parameter automatically — no lambda needed.
 | `viewModel<T>()`                  | Android ViewModel, class you own                   |
 | `worker<T>()`                     | WorkManager Worker — reified Safe DSL form (needs `koin-androidx-workmanager`) |
 | `single { create(::T) }`          | Explicit factory-function reference — equivalent to `single<T>()`, use when intent should be visible in review |
-| `single { T(get(), get()) }`      | **Fallback** — only for third-party types that can't be reached via reified generics (`Retrofit.Builder()`, `Room.databaseBuilder()`, `OkHttpClient.Builder()`) |
-| `singleOf(::T)` / `factoryOf(::T)`| Legacy form — prefer `single<T>()` / `factory<T>()` |
+| `single { create(::buildT) }`     | **Function builder** — types that can't be built from their constructor (`Retrofit.Builder()`, `Room.databaseBuilder()`, `OkHttpClient.Builder()`). Parameters injected like a constructor |
+| `single { T(get(), get()) }`      | **Last-resort fallback** — only when a function builder doesn't fit |
+| `singleOf(::T)` / `factoryOf(::T)`| Autowire DSL — supported, keep existing code; new code uses `single<T>()` / `factory<T>()` |
 
 ```kotlin
 val appModule = module {
@@ -85,19 +59,20 @@ val appModule = module {
     factory<RequestId>()
     viewModel<HomeViewModel>()
 
-    // Third-party types — lambda fallback is fine
-    single<Retrofit> {
-        Retrofit.Builder()
-            .client(get())
-            .baseUrl(BuildConfig.BASE_URL)
-            .build()
-    }
+    // Third-party types — function builder (defined below the module)
+    single { create(::buildRetrofit) }
 
     // WorkManager
     worker<SyncWorker>()                           // Safe DSL — reified, ctor auto-resolved
     // Lambda form is fallback only:
     // worker { SyncWorker(androidContext(), get(), get()) }
 }
+
+fun buildRetrofit(client: OkHttpClient): Retrofit =
+    Retrofit.Builder()
+        .client(client)
+        .baseUrl(BuildConfig.BASE_URL)
+        .build()
 ```
 
 ## Interface binding
@@ -205,6 +180,7 @@ the parameter type control the resolution:
 | `T?`                 | Optional — `null` if no definition             |
 | `List<T>`            | All definitions of `T`                         |
 | `Lazy<T>`            | Deferred — resolved on first access            |
+| Default-valued param | Skipped — Kotlin default used                  |
 
 For runtime parameters, the **preferred form is `@InjectedParam` on the
 constructor** — the Compiler Plugin reads it whether the module uses annotations
@@ -254,61 +230,35 @@ val appModule = module {
 
 ## App entry point
 
-**For Safe DSL output, use the classic `startKoin` — not the reified Compiler-Plugin variant.** The reified one is for `@KoinApplication` auto-discovery only.
+DSL configuration (`references/rules.md` §5): `startKoin` loads **one app
+module**, which `includes(...)` the child modules. Use the classic `startKoin`,
+not the reified Compiler-Plugin variant (that one is for `@KoinApplication`).
 
 ```kotlin
 import org.koin.core.context.startKoin
+
+val appModule = module {
+    includes(homeModule, settingsModule, dataModule)
+}
 
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
-            androidLogger()
-            modules(appModule, networkModule, dataModule)
+            modules(appModule)
         }
     }
 }
 ```
 
-Mixing Safe DSL modules with annotated `@Module @Configuration` classes:
-
-```kotlin
-startKoin {
-    androidContext(this@App)
-    modules(appModule, module<AnnotatedModule>())
-}
-```
+Mixing with an annotated module (only if the user asked for it):
+`modules(appModule, module<AnnotatedModule>())`.
 
 ## Retrieval
 
-From an Android entry point:
-
-```kotlin
-class MyActivity : AppCompatActivity() {
-    private val repo: Repository by inject()
-    private val vm: HomeViewModel by viewModel()
-}
-```
-
-From Compose:
-
-```kotlin
-@Composable fun Screen() {
-    val repo = koinInject<Repository>()
-    val vm   = koinViewModel<HomeViewModel>()
-}
-```
-
-From a non-Koin-constructed class — prefer constructor injection via `single<T>()`
-so the compiler resolves dependencies. Use `KoinComponent` only when constructor
-injection is impossible:
-
-```kotlin
-class LegacyHelper : KoinComponent {
-    private val repo: Repository by inject()
-}
-```
+Entry points (Android, Compose, …): `references/entry-points.md`. Anywhere
+else, constructor injection.
 
 ## Testing
 
@@ -322,28 +272,27 @@ class RepositoryTest : KoinTest {
             single<FakeApiService>().bind<ApiService>()   // override production binding
         })
     }
-
-    @Test
-    fun `graph check`() = checkModules { modules(appModule) }
 }
 ```
 
-## Classic DSL fallback — when it's OK
+Graph verification is done at compile time by the Koin Compiler Plugin. `checkModules()` and `verify()` are on their way to deprecation — don't add them.
 
-Lambda form (`single { T(get()) }` / `singleOf(::T)`) is a **fallback only**. Legitimate uses:
+## When a lambda is the right form
 
-- Third-party builder types (`Retrofit`, `Room`, `OkHttpClient`, `Firebase*`)
-- Qualified bindings where multiple qualifier variants need different ctor args:
+Form choice is in `references/rules.md` §1. A lambda (`single { … }`) fits when
+the definition needs a custom expression:
+
+- Qualified variants that need different constructor arguments:
   ```kotlin
   single<HttpClient>(Auth) { HttpClient(get(Auth)) }
   ```
-- Runtime parameters: `factory { (id: String) -> ... }`
-- Test overrides with hand-built mocks
+- Runtime parameters on a class you can't annotate: `factory { (id: String) -> … }`
+- Test overrides with hand-built fakes
 
-Do **not** use classic DSL for ordinary classes you own — the compiler handles
-them via `single<T>()`.
+Third-party builders use a function builder first (`references/principles.md`
+rule 1).
 
-## What this skill does NOT cover
+## Not covered here
 
 - Full Koin feature set — see https://insert-koin.io
 - Annotations output — see `references/koin-annotations.md`

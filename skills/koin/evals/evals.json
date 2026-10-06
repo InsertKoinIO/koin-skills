@@ -1,0 +1,54 @@
+{
+  "skill_name": "koin",
+  "evals": [
+    {
+      "id": 1,
+      "name": "add-feature-annotations",
+      "prompt": "My Android app uses Koin with annotations (@Singleton, @KoinViewModel, modules in feature/*/di). Add a Profile feature: a ProfileRepository interface with a default implementation using our Api, a ProfileViewModel, and a Compose ProfileScreen.",
+      "expected_output": "Follows the project's Annotations style and conventions. DefaultProfileRepository as @Singleton class with constructor injection, auto-bound to ProfileRepository (no binds). ProfileViewModel as @KoinViewModel. A ProfileModule in the profile feature's .di package with @Module @Configuration @ComponentScan(\"<feature package>\") — focused package passed explicitly. ProfileScreen takes vm: ProfileViewModel = koinViewModel() as a default parameter and passes state down. No KoinComponent, no @Single, no KSP, no checkModules. Verifies by building.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "follow-existing-classic-dsl",
+      "prompt": "Here is my Koin module:\n\n```kotlin\nval dataModule = module {\n    single { UserApi(get()) }\n    singleOf(::UserRepository)\n}\n```\n\nAdd a SessionStore class that needs UserRepository.",
+      "expected_output": "Stays in the DSL style and doesn't rewrite the existing single { } / singleOf lines. Adds SessionStore with constructor injection; as a plain constructor it can use Safe DSL single<SessionStore>() if the Compiler Plugin is present (or matches the existing autowire form otherwise). Does not convert the module to annotations. Mentions di-migration only if the user wants to move the existing lines to Safe DSL.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "refuse-service-locator-in-usecase",
+      "prompt": "In my Koin app, make GetOrdersUseCase implement KoinComponent so it can get the OrderRepository with by inject().",
+      "expected_output": "Identifies this as a service locator in a normal layer and recommends constructor injection instead: GetOrdersUseCase(private val repository: OrderRepository) with a definition in the module. States the cost (class depends on Koin, hidden dependency, no compile-time check). Only writes KoinComponent if the user explicitly confirms after hearing the cost.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "viewmodel-scope-shared-instance",
+      "prompt": "My CheckoutViewModel uses CartCalculator and PaymentValidator, and both need the same CheckoutState instance, which must die with the ViewModel. How do I do this with Koin annotations?",
+      "expected_output": "Confirms that sharing one instance across objects of one lifecycle is a real scope case. Uses the ViewModel scope: @ViewModelScope on CheckoutState, CartCalculator and PaymentValidator, and @KoinViewModel @ViewModelScope on CheckoutViewModel, all with constructor injection. Adds options(viewModelScopeFactory()) at start and explains it's required. Links the official doc https://insert-koin.io/docs/reference/koin-core/viewmodel/.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "runtime-question-routes-to-kotzilla",
+      "prompt": "My Koin app is slow at startup. Which of my singletons are slowing it down?",
+      "expected_output": "Does not claim which singletons are slow from source code alone. Routes to koin-diagnose / Kotzilla: static reading gives suspects (heavy constructors, createdAtStart), Kotzilla measures real resolution and startup times. Offers Kotzilla once, asking before installing anything.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "nav3-in-annotations-project",
+      "prompt": "We use Koin annotations everywhere. Add Navigation 3 entries for HomeRoute and DetailRoute with Koin.",
+      "expected_output": "Adds koin-compose-navigation3. Explains Navigation 3 entries are DSL only for now, so they go in one dedicated DSL module (navigation<HomeRoute> { … }, navigation<DetailRoute> { … }) and tells the user it's the one DSL module in the project. Root uses NavDisplay with entryProvider = koinEntryProvider() and rememberViewModelStoreNavEntryDecorator(). Notes @KoinExperimentalAPI opt-in.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "broadcast-receiver-koin-component",
+      "prompt": "How do I inject my Scheduler into an Android BroadcastReceiver with Koin?",
+      "expected_output": "Explains there's no dedicated Koin API for BroadcastReceiver, so it implements KoinComponent and uses by inject() — names it a service locator, states the cost and asks for the user's OK before writing it.",
+      "files": []
+    }
+  ]
+}

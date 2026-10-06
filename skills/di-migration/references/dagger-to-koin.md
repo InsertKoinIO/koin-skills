@@ -1,6 +1,6 @@
 # Dagger 2 → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-annotations.md`](koin-annotations.md) → "Setup" for the standard Gradle block, JSR-330 support note, and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)
@@ -104,12 +104,7 @@ lockstep. When the last bridge function is gone, the `@Component` interface,
 the `AppComponent` field on `App`, and the `DaggerAppComponent.create(...)`
 call in `onCreate()` all disappear together.
 
-When multiple consumers need the same bridge:
-1. **Duplicate** in each consumer (default — cheap).
-2. **Migrate the source binding first** — bridges disappear naturally.
-3. **Promote** to a `SharedBridgeModule` (`@Module + @Configuration`) consumed
-   via `@Module(includes = [SharedBridgeModule::class])`. `includes` keeps A1
-   happy; siblings don't. Promote on demand, not pre-emptively.
+When several consumers need the same bridge: see "Bridging with the existing DI" in the `di-migration` SKILL.md (duplicate, migrate the source first, or promote to a `SharedBridgeModule`).
 
 ### Compile-time graph check
 
@@ -169,17 +164,7 @@ dependencies {
 
 ### Step 2: Add Koin + Compiler Plugin
 
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ## Component to Module
@@ -504,7 +489,7 @@ class PresenterImpl(private val repo: Repo) : Presenter
 class ActivityAnalytics(private val tracker: Tracker)
 
 // In Activity
-class MyActivity : AppCompatActivity(), KoinScopeComponent {
+class MyActivity : AppCompatActivity(), AndroidScopeComponent {
     override val scope: Scope by activityScope()
 
     private val presenter: Presenter by inject()
@@ -513,16 +498,7 @@ class MyActivity : AppCompatActivity(), KoinScopeComponent {
 
 ## Parameter Resolution
 
-All constructor and function parameters are **handled automatically by the Koin Compiler**:
-`T`, `T?`, `Lazy<T>`, `List<T>` — just declare the type.
-
-| Dagger                        | Koin                          |
-|-------------------------------|-------------------------------|
-| `T`                           | `T` — required                |
-| `Lazy<T>` (dagger.Lazy)      | `Lazy<T>` (kotlin.Lazy) — deferred |
-| `Provider<T>` (javax)         | `List<T>` or `() -> T` lambda |
-| `@Nullable T`                | `T?` — optional               |
-| `@Named("x") T`              | `@Named("x") T` — qualified  |
+Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-safe-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
 
 ## Lazy and Provider
 

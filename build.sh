@@ -2,13 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-SRC="$ROOT/skills/di-migration"
-SKILL_OUT="$ROOT/di-migration-skill.skill"
+SHARED="$ROOT/shared"
 PLUGIN_OUT="$ROOT/koin-migration-plugin.zip"
 
 # --- validate sources -------------------------------------------------------
 
-[[ -f "$SRC/SKILL.md" ]]                       || { echo "error: $SRC/SKILL.md not found" >&2; exit 1; }
+[[ -d "$SHARED" ]]                             || { echo "error: shared/ missing" >&2; exit 1; }
 [[ -f "$ROOT/.claude-plugin/plugin.json" ]]      || { echo "error: .claude-plugin/plugin.json missing" >&2; exit 1; }
 [[ -f "$ROOT/.claude-plugin/marketplace.json" ]] || { echo "error: .claude-plugin/marketplace.json missing" >&2; exit 1; }
 [[ -f "$ROOT/LICENSE" ]]                       || { echo "error: LICENSE missing" >&2; exit 1; }
@@ -34,12 +33,36 @@ for p in mkt['plugins']:
         sys.exit(f\"marketplace.json: plugin {p.get('name')!r} missing 'source'\")
 "
 
-# --- build .skill bundle (portable single-skill archive, flat layout) ------
+# --- sync shared references into every skill -------------------------------
+# shared/*.md is the source of truth. Each skill gets a committed copy under
+# references/ so it works standalone (plugin install, .skill bundle, skills.sh).
 
-rm -f "$SKILL_OUT"
-(cd "$SRC" && zip -rq "$SKILL_OUT" SKILL.md references $([[ -d evals ]] && echo evals) \
-   -x "*/.DS_Store" "*.DS_Store")
-echo "built: $SKILL_OUT"
+SKILLS=()
+for dir in "$ROOT"/skills/*/; do
+  [[ -f "$dir/SKILL.md" ]] || continue
+  SKILLS+=("$(basename "$dir")")
+  mkdir -p "$dir/references"
+  for f in "$SHARED"/*.md; do
+    name="$(basename "$f")"
+    { echo "<!-- GENERATED from shared/$name by build.sh — edit shared/$name, not this copy -->"
+      echo
+      cat "$f"
+    } > "$dir/references/$name"
+  done
+done
+[[ ${#SKILLS[@]} -gt 0 ]] || { echo "error: no skills/*/SKILL.md found" >&2; exit 1; }
+echo "synced shared/ into: ${SKILLS[*]}"
+
+# --- build .skill bundles (portable single-skill archives, flat layout) -----
+
+for skill in "${SKILLS[@]}"; do
+  src="$ROOT/skills/$skill"
+  out="$ROOT/$skill-skill.skill"
+  rm -f "$out"
+  (cd "$src" && zip -rq "$out" SKILL.md references $([[ -d evals ]] && echo evals) \
+     -x "*/.DS_Store" "*.DS_Store")
+  echo "built: $out"
+done
 
 # --- build plugin .zip (marketplace submission layout) ----------------------
 
