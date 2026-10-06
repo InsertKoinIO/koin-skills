@@ -41,7 +41,7 @@ Projects using `koin-annotations` + `koin-ksp-compiler` (KSP-based) benefit from
 |------------------------------|--------------------------------------------------|--------------------------------------------------|
 | Gradle plugin                | `com.google.devtools.ksp`                        | `io.insert-koin.compiler.plugin`                 |
 | Compiler dependency          | `ksp("io.insert-koin:koin-ksp-compiler")`        | Included via plugin                              |
-| Annotations library          | `io.insert-koin:koin-annotations:1.x/2.x`       | `io.insert-koin:koin-annotations:4.2.x`         |
+| Annotations library          | `io.insert-koin:koin-annotations:1.x/2.x`       | `io.insert-koin:koin-annotations` via `koin-bom` |
 | Generated files              | `build/generated/ksp/*.kt` files                 | **None** — inline transformation                 |
 | DSL style                    | `singleOf(::MyClass)`                            | `single<MyClass>()`                              |
 | Module import                | `import org.koin.ksp.generated.module`            | No special import needed                         |
@@ -387,9 +387,7 @@ object MyApp
 
 // Modules are auto-injected — no manual module list
 fun main() {
-    startKoin<MyApp> {
-        printLogger()
-    }
+    startKoin<MyApp>()
 }
 ```
 

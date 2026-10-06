@@ -61,7 +61,7 @@ Mappings target **Safe DSL + Koin Compiler Plugin** (no annotations for Kodein):
 | `multiton<P, T>()` (cached factory)  | No direct equivalent — a `single<Map<P, T>>` cache, or `single<T>` per known key |
 | `bindings.set { add(...) }` (set bindings) | Manual `List<T>` collected inside a `single<List<T>>` |
 | `subDI(parentDI) { ... }`            | Multiple modules in `startKoin { modules(parent, child) }` |
-| `DIAware` interface on a class       | `KoinComponent` interface + `by inject()`             |
+| `DIAware` interface on a class       | Constructor injection (see Retrieval below)          |
 | `androidXModule(app)`                | `androidContext(this@App)` in `startKoin { }`         |
 | `closestDI()` from Android `Context` | `getKoin()` (Android), `koinInject()` (Compose)       |
 
@@ -117,21 +117,10 @@ startKoin {
 }
 ```
 
-**Safe DSL forms** (preferred — compiler resolves constructor params):
-
-- `single<T>()` — no lambda, reified. Compiler resolves every ctor param.
-- `single { create(::T) }` — explicit factory-function reference, equivalent to
-  the above but more explicit. Use when you want the `::T` reference to be
-  visible (e.g. to show intent in a code review).
-- `single<Impl>().bind<I>()` — bind an impl to an interface.
-
-**Classic DSL lambda** (`single { T(get()) }`) is a fallback **only** for
-third-party types that can't be reached via reified generics (e.g. `Retrofit.Builder()`,
-`Room.databaseBuilder()`). Do not use it for classes you own.
-
-Classic DSL lambdas (`single { Retrofit.Builder()... }`) remain a fallback for
-third-party types that can't be reached via reified generics. Do not emit
-`@Singleton` / `@Factory` / `@Module` class annotations in Kodein migration output.
+Kodein migrations produce **Safe DSL** — never `@Singleton` / `@Factory` /
+`@Module` annotations. Definition forms (reified `single<T>()`, `.bind<I>()`,
+function builders for third-party types, lambdas only for custom expressions):
+`references/rules.md` §1 and `references/koin-safe-dsl.md`.
 
 ---
 
@@ -196,18 +185,14 @@ For multiple runtime args, list each `@InjectedParam` parameter — order matche
 
 | Kodein                                  | Koin                            |
 |-----------------------------------------|---------------------------------|
-| `class X(override val di: DI) : DIAware` | `class X : KoinComponent`      |
+| `class X(override val di: DI) : DIAware` | Normal class → constructor injection. Android / framework entry point → its Koin API (`references/entry-points.md`). `KoinComponent` only with the user's OK (`references/rules.md` §8) |
 | `val r: Repo by instance()`             | `val r: Repo by inject()`       |
 | `val r: Repo = di.direct.instance()`    | `val r: Repo = get()`           |
 | `val r: Repo by instance(tag = "x")`    | `val r: Repo by inject(named("x"))` |
-| `val r: () -> Repo by provider()` (new instance per call when bound to `provider`) | Re-resolve via `get<Repo>()` on each call (`KoinComponent`). `Lazy<Repo>` only matches Kodein `provider()` over a `singleton` binding — semantics differ for `provider` bindings. |
+| `val r: () -> Repo by provider()` (new instance per call when bound to `provider`) | `factory<Repo>()` + re-resolve on each call — needs a service locator (`KoinComponent`, `references/rules.md` §8). `Lazy<Repo>` only matches Kodein `provider()` over a `singleton` binding — semantics differ for `provider` bindings. |
 | `val r: Repo? by instanceOrNull()`      | `val r: Repo? by injectOrNull()` (or auto `Repo?` constructor param) |
 
-Prefer **constructor injection** in Koin — declare dependencies as constructor
-parameters and let `single<T>()` / `factory<T>()` resolve them via reified
-generics. Reserve `KoinComponent` for cases where constructor injection is
-impossible (Android `Activity` / `Fragment`, frameworks that own object
-construction).
+Constructor injection everywhere else — `references/principles.md` rule 1–2.
 
 ---
 
@@ -237,7 +222,7 @@ class App : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
-            modules(module<AppModule>())
+            modules(appModule)            // one app module that includes the feature modules
         }
     }
 }

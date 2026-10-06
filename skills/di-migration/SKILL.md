@@ -189,10 +189,12 @@ Gradle module root discovered. DSL: `startKoin` loads one app module that
 
 ### Step 6 — Update Injection Sites
 
-Replace field injection (`@Inject lateinit var`) with `by inject()`, constructor
-annotations with Koin module registration, `hiltViewModel()` with `koinViewModel()`,
-scope-access patterns with Koin scope APIs. Remove `@AndroidEntryPoint`,
-`@HiltAndroidApp`, and equivalents. Show each changed file with before/after.
+Field injection (`@Inject lateinit var`): at framework entry points (Activity,
+Fragment, Service…) → the Koin API for that entry point (`references/entry-points.md`);
+in normal classes → constructor injection, never `KoinComponent` (`references/rules.md` §8).
+`hiltViewModel()` → `koinViewModel()`, scope access → `references/scopes.md`. Remove
+`@AndroidEntryPoint`, `@HiltAndroidApp` and equivalents. Show each changed file with
+before/after.
 
 ### Step 7 — Per-module validation
 
@@ -238,11 +240,10 @@ Read the relevant reference section:
 
 - **Assisted Inject** → `@InjectedParam` + `parametersOf()`
 - **Multibindings (Set/Map)** → manual collection assembly in `@Module`
-- **Custom Scopes** → `scope<ScopeType> { }` or `@Scope(ScopeType::class)`
+- **Custom Scopes** → `references/scopes.md` (scopes only when an instance must be shared — check with the user)
 - **Component Dependencies** → module includes + scoping
-- **Lazy / Provider** → auto `Lazy<T>`; `by inject()` for lazy delegation
-- **WorkManager** → `@KoinWorker` (annotations) or `worker<T>()` (Safe DSL — reified, lambda is fallback). Needs `koin-androidx-workmanager`.
-- **Navigation Compose** → scoped ViewModels via `koinViewModel()`
+- **Lazy / Provider** → `Lazy<T>` constructor parameter (`references/principles.md` rule 7)
+- **WorkManager**, **Navigation** → `references/entry-points.md`
 - **JSR-330 annotations** → handled natively by the Koin Compiler
 - **Custom qualifiers** → reusable as-is
 

@@ -163,19 +163,18 @@ class ActivityNavigator(private val analytics: Analytics)
 @FragmentScope
 class DetailPresenter(private val api: ApiService, private val db: AppDatabase)
 
-// Module for auto-discovery
+// Module for auto-discovery — root module of this Gradle module
 @Module
-@ComponentScan("com.myapp")
+@Configuration
+@ComponentScan("com.myapp.chat")          // focused package (references/rules.md §7)
 class AppModule
 
-// Application setup
+// Application setup — AppModule carries @Configuration and is discovered
+@KoinApplication
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
-        startKoin {
-            androidContext(this@App)
-            modules(module<AppModule>())
-        }
+        startKoin<App> { androidContext(this@App) }
     }
 }
 

@@ -181,15 +181,18 @@ interface AppComponent {
 ```
 
 ```kotlin
-// AFTER: Koin
+// AFTER: Koin — the component becomes a root module, discovered at start
 @Module(includes = [NetworkModule::class, DatabaseModule::class])
-@ComponentScan("com.myapp")
+@Configuration
+@ComponentScan("com.myapp.app")          // focused package (references/rules.md §7)
 class AppModule
 
-// In Application.onCreate()
-startKoin {
-    androidContext(this@App)
-    modules(module<AppModule>())
+@KoinApplication
+class App : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin<App> { androidContext(this@App) }   // no modules(...) — discovered
+    }
 }
 ```
 

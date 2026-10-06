@@ -117,10 +117,13 @@ val dataModule = module {
 
 ```kotlin
 // AFTER: Safe DSL + Compiler Plugin
+fun buildDatabase(context: Context): AppDatabase = AppDatabase.create(context)
+fun buildUserDao(db: AppDatabase): UserDao = db.userDao()
+
 val dataModule = module {
-    // Third-party classes with custom creation logic — keep lambda syntax
-    single { AppDatabase.create(androidContext()) }
-    single { get<AppDatabase>().userDao() }
+    // Custom creation logic — function builders (references/rules.md §1)
+    single { create(::buildDatabase) }
+    single { create(::buildUserDao) }
 
     // Classes you own with standard constructors — use reified type
     single<UserRepository>()
@@ -418,12 +421,15 @@ startKoin {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Safe DSL — third-party types through function builders
+fun buildOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
+fun buildRetrofit(client: OkHttpClient): Retrofit = Retrofit.Builder().client(client).baseUrl(URL).build()
+fun buildApi(retrofit: Retrofit): ApiService = retrofit.create(ApiService::class.java)
+
 val networkModule = module {
-    // Third-party types with custom creation logic — keep lambda syntax
-    single { OkHttpClient.Builder().build() }
-    single { Retrofit.Builder().client(get()).baseUrl(URL).build() }
-    single { get<Retrofit>().create(ApiService::class.java) }
+    single { create(::buildOkHttp) }
+    single { create(::buildRetrofit) }
+    single { create(::buildApi) }
 }
 
 val repositoryModule = module {
@@ -440,10 +446,9 @@ startKoin {
 }
 ```
 
-**When to keep lambda syntax vs use reified type:**
-- `single<MyClass>()` — for classes you own with standard constructors
-- `single { thirdParty.create(...) }` — for third-party classes, builder patterns, or custom creation logic
-- Both are validated by the compiler plugin when `compileSafety = true`
+Which form for which definition: `references/rules.md` §1 (plain constructor →
+`single<T>()`; third-party / custom expression → function builder, lambda as a
+last resort). All forms are checked by the Compiler Plugin.
 
 ## KMP Modules
 
@@ -570,9 +575,10 @@ val module = module {
     single<Retrofit>()  // Compiler error: can't resolve constructor
 }
 
-// RIGHT — use lambda syntax for custom creation logic
+// RIGHT — a function builder (the compiler checks its parameters)
+fun buildRetrofit(client: OkHttpClient): Retrofit = Retrofit.Builder().client(client).baseUrl(URL).build()
 val module = module {
-    single { Retrofit.Builder().client(get()).baseUrl(URL).build() }
+    single { create(::buildRetrofit) }
 }
 ```
 
