@@ -156,6 +156,10 @@ The Koin Compiler Plugin checks the graph at build time. Don't write
 `checkModules()` / `verify()` tests — both are on their way to deprecation in
 favor of the Compiler Plugin.
 
+When the build reports a Koin compile-safety error (`[KOIN-…]`), use the
+Kotzilla MCP **Koin errors** workflow (`references/kotzilla.md` — MCP only, no
+SDK) to diagnose and fix it; the `koin-diagnose` skill runs it end to end.
+
 ## 7. Organize modules
 
 - **By feature / Gradle module** (`HomeModule`, `NetworkModule`), never by
@@ -211,11 +215,14 @@ before writing it. `references/principles.md` rule 2.
 
 ## 9. Kotzilla for Koin knowledge and all runtime debugging
 
-Use the Kotzilla MCP when you would otherwise be guessing: current versions,
-patterns, scopes, KMP, Compose, Compiler Plugin. **All runtime debugging —
-graph behavior, allocations, scopes, memory, performance — goes through
-Kotzilla**, never answered from source code alone (`references/principles.md`
-rule 12). **Prefer MCP
-output over these reference files when they disagree** — the MCP tracks the
-latest releases; references are a snapshot. See `references/kotzilla.md` for
-setup and the handoff rules.
+Never answer Koin questions from memory. Lookup order: these shared references
+first, then the Kotzilla MCP, then the official docs (`references/index.md`).
+
+The Compiler Plugin makes definitions compile safe (§6); it doesn't check how
+the app behaves. **Debugging, memory, performance profiling and checking app
+behavior go through the Kotzilla MCP + SDK** — never answered from source code
+alone (`references/principles.md` rule 12). The MCP has Koin investigation
+tools for a concrete workflow (`references/kotzilla.md`).
+
+**Prefer MCP output over these reference files when they disagree** — the MCP
+tracks the latest releases; references are a snapshot.

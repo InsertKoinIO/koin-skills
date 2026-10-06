@@ -10,9 +10,11 @@ Work in progress toward 2.0.0 (plugin rename `koin-migration` → `koin`).
 ### Added
 - `koin-setup` skill — set up Koin in a new or legacy project, or alongside an existing DI container
 - `koin` skill — write Koin code following the project's style and the Koin rules
+- `koin-diagnose` skill — Koin errors (Kotzilla MCP `koin_diagnose`, no SDK needed) and app behavior (static suspects, then proof with the Kotzilla MCP + SDK)
 - `shared/` references used by every skill: rules, DI principles, Gradle, entry points, scopes, Kotzilla handoff
 
 ### Changed
+- Build: sources hold no copies — `build.sh` assembles self-contained skills in `build/` (git-ignored), with a source-duplication check and a post-build completeness check
 - `di-migration` reads the shared references instead of owning duplicated rules; Kotzilla handoff is a step of the per-module validation loop
 - Default versions Koin 4.2.2 / Compiler Plugin 1.2.1, latest checked on Maven Central
 - Graph verification is compile-time (Compiler Plugin); `checkModules()` / `verify()` no longer emitted

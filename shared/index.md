@@ -10,5 +10,30 @@ the file that owns it.
 | `gradle.md` | Compiler Plugin, BOM, artifact per need and KMP source set, plugin options |
 | `entry-points.md` | Where to start Koin per project type, and the Koin API for every entry point (Android, Compose, ViewModel, Navigation, WorkManager, Ktor, iOS, isolated context) |
 | `scopes.md` | Scopes — advanced |
+| `testing.md` | Tests: plain unit tests, `koin-test` (`KoinTestRule`, `KoinTestExtension`), fakes and mocks |
 | `koin-annotations.md` / `koin-safe-dsl.md` | Exact syntax and imports — don't infer from memory |
 | `kotzilla.md` | Kotzilla MCP and runtime handoff |
+
+## Lookup order — never answer from memory
+
+1. **These shared references first.**
+2. Not covered here → **ask the Kotzilla MCP** (`kotzilla.md`) — it tracks the
+   latest releases.
+3. MCP not connected → mention it once, then use the official doc page below.
+
+## Not covered here — official docs
+
+| Topic | Official doc |
+|---|---|
+| Properties (`getProperty`, `@Property`, file / environment properties) | https://insert-koin.io/docs/reference/koin-core/start-koin/ |
+| Loading / unloading modules at runtime (`loadKoinModules`) | https://insert-koin.io/docs/reference/koin-core/start-koin/ |
+| Lazy modules, background module loading | https://insert-koin.io/docs/reference/koin-core/lazy-modules/ |
+| Definition options (`createdAtStart`, multiple `binds`…) | https://insert-koin.io/docs/reference/koin-core/definitions/ |
+| Injection parameters in depth | https://insert-koin.io/docs/reference/koin-core/injection-parameters/ |
+| Qualifiers in depth | https://insert-koin.io/docs/reference/koin-core/qualifiers/ |
+| Modules (overrides, composition) | https://insert-koin.io/docs/reference/koin-core/modules/ |
+| Android multi-module apps | https://insert-koin.io/docs/reference/koin-android/multi-module/ |
+| KMP shared modules | https://insert-koin.io/docs/reference/koin-core/kmp-shared-modules/ |
+| Compose (all APIs) | https://insert-koin.io/docs/reference/koin-compose/compose/ |
+| Advanced patterns | https://insert-koin.io/docs/reference/koin-core/advanced-patterns/ |
+| Troubleshooting | https://insert-koin.io/docs/reference/koin-core/troubleshooting/ |

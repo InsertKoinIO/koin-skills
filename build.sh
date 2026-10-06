@@ -3,7 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 SHARED="$ROOT/shared"
-PLUGIN_OUT="$ROOT/koin-migration-plugin.zip"
+BUILD="$ROOT/build"                      # temp assembly dir — git-ignored, never committed
+PLUGIN_DIR="$BUILD/plugin"
+PLUGIN_OUT="$BUILD/koin-migration-plugin.zip"
 
 # --- validate sources -------------------------------------------------------
 
@@ -33,49 +35,61 @@ for p in mkt['plugins']:
         sys.exit(f\"marketplace.json: plugin {p.get('name')!r} missing 'source'\")
 "
 
-# --- sync shared references into every skill -------------------------------
-# shared/*.md is the source of truth. Each skill gets a committed copy under
-# references/ so it works standalone (plugin install, .skill bundle, skills.sh).
+# --- source duplication check ----------------------------------------------
+
+python3 "$ROOT/scripts/check_duplication.py" "$ROOT"
+
+# --- assemble the plugin in build/ ----------------------------------------
+# Sources stay duplication-free: skills/<name>/ holds only the skill's own
+# files, shared/ holds the shared references. build/ gets complete,
+# self-contained skills (own files + shared references).
+
+rm -rf "$BUILD"
+mkdir -p "$PLUGIN_DIR/skills"
+cp -R "$ROOT/.claude-plugin" "$PLUGIN_DIR/"
+cp "$ROOT/README.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$PLUGIN_DIR/"
 
 SKILLS=()
 for dir in "$ROOT"/skills/*/; do
   [[ -f "$dir/SKILL.md" ]] || continue
-  SKILLS+=("$(basename "$dir")")
-  mkdir -p "$dir/references"
+  skill="$(basename "$dir")"
+  SKILLS+=("$skill")
+  out="$PLUGIN_DIR/skills/$skill"
+  mkdir -p "$out/references"
+  (cd "$dir" && find . -type f ! -name ".DS_Store" -exec sh -c 'mkdir -p "$0/$(dirname "$1")" && cp "$1" "$0/$1"' "$out" {} \;)
   for f in "$SHARED"/*.md; do
     name="$(basename "$f")"
-    { echo "<!-- GENERATED from shared/$name by build.sh — edit shared/$name, not this copy -->"
-      echo
-      cat "$f"
-    } > "$dir/references/$name"
+    [[ -e "$dir/references/$name" ]] && { echo "error: skills/$skill/references/$name shadows shared/$name" >&2; exit 1; }
+    cp "$f" "$out/references/$name"
   done
 done
 [[ ${#SKILLS[@]} -gt 0 ]] || { echo "error: no skills/*/SKILL.md found" >&2; exit 1; }
-echo "synced shared/ into: ${SKILLS[*]}"
+echo "assembled in build/plugin: ${SKILLS[*]}"
+
+# --- check that every references/*.md link resolves -------------------------
+
+missing=0
+for skill in "${SKILLS[@]}"; do
+  out="$PLUGIN_DIR/skills/$skill"
+  for ref in $(grep -rhoE 'references/[a-z0-9-]+\.md' "$out" | sort -u); do
+    [[ -f "$out/$ref" ]] || { echo "error: $skill links to $ref, not found" >&2; missing=1; }
+  done
+done
+[[ $missing -eq 0 ]] || exit 1
 
 # --- build .skill bundles (portable single-skill archives, flat layout) -----
 
 for skill in "${SKILLS[@]}"; do
-  src="$ROOT/skills/$skill"
-  out="$ROOT/$skill-skill.skill"
-  rm -f "$out"
-  (cd "$src" && zip -rq "$out" SKILL.md references $([[ -d evals ]] && echo evals) \
-     -x "*/.DS_Store" "*.DS_Store")
-  echo "built: $out"
+  bundle="$BUILD/$skill-skill.skill"
+  (cd "$PLUGIN_DIR/skills/$skill" && zip -rq "$bundle" .)
+  echo "built: build/$skill-skill.skill"
 done
 
 # --- build plugin .zip (marketplace submission layout) ----------------------
 
-rm -f "$PLUGIN_OUT"
-(cd "$ROOT" && zip -rq "$PLUGIN_OUT" \
-  .claude-plugin \
-  skills \
-  README.md \
-  LICENSE \
-  CHANGELOG.md \
-  -x "skills/*/.DS_Store" "*.DS_Store")
-echo "built: $PLUGIN_OUT"
+(cd "$PLUGIN_DIR" && zip -rq "$PLUGIN_OUT" .claude-plugin skills README.md LICENSE CHANGELOG.md)
+echo "built: build/koin-migration-plugin.zip"
 
-echo
-echo "--- plugin contents ---"
-unzip -l "$PLUGIN_OUT"
+# --- post-build check: everything copied, bundles complete -----------------
+
+python3 "$ROOT/scripts/check_build.py" "$ROOT"

@@ -1,0 +1,47 @@
+{
+  "skill_name": "koin-diagnose",
+  "evals": [
+    {
+      "id": 1,
+      "name": "compile-error-with-mcp",
+      "prompt": "My build fails with this:\n\n```\n[Koin][KOIN-D001] Missing definition for type 'com.acme.data.UserRepository' required by 'com.acme.feature.home.HomeViewModel'\n```\n\nCan you fix it?",
+      "expected_output": "Track A. Calls the Kotzilla MCP koin_diagnose with the full error text (no SDK needed) and follows the returned workflow: searches the project for UserRepository providers, finds the cause (no definition, qualifier mismatch, or module not included / not discovered), proposes one edit, asks for OK, applies it, rebuilds. Does not install the Kotzilla SDK. Does not add a checkModules test.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "runtime-no-definition-without-mcp",
+      "prompt": "The app crashes at startup with org.koin.core.error.NoDefinitionFoundException: No definition found for type 'com.acme.settings.SettingsRepository'. The class is annotated @Singleton in the settings Gradle module, whose module class is annotated @Module @ComponentScan(\"com.acme.settings\"). I don't have the Kotzilla MCP.",
+      "expected_output": "Track A without the MCP: mentions the Kotzilla MCP once, then checks the usual causes against the rules. Identifies the missing @Configuration on the settings module root (discovery triad) as the likely cause — a silent runtime failure, not a compile error. Proposes adding @Configuration, asks for OK, then rebuild and run to confirm.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "slow-startup-static-then-kotzilla",
+      "prompt": "Our Android app with Koin takes ages to start. Here is our module:\n\n```kotlin\n@Module @Configuration @ComponentScan(\"com.acme\")\nclass AppModule {\n    @Singleton(createdAtStart = true)\n    fun database(ctx: Context): AppDatabase = Room.databaseBuilder(ctx, AppDatabase::class.java, \"app\").build().also { it.openHelper.writableDatabase }\n}\n```",
+      "expected_output": "Track B. B1: flags as suspects (not measured facts) the eager createdAtStart database opened on the main thread during startKoin, and the broad @ComponentScan(\"com.acme\"). Proposes fixes (drop createdAtStart, lazy / background opening, focused scan package). Never claims a startup time. B2: offers Kotzilla once to confirm with real data, asking before installing the SDK; explains one local run is a smoke test and percentiles need real traffic.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "anr-with-kotzilla-connected",
+      "prompt": "Kotzilla is set up on our app (MCP connected, SDK installed). Users report ANRs on the home screen. Find the cause and fix it.",
+      "expected_output": "Track B with Kotzilla already in place: uses the MCP app-behavior workflow — identifies the app, lists issues for the current version, opens the ANR / main-thread issue context for the root cause, gets the fix guidance for that issue type, proposes the fix, then plans verification on a new version with fresh sessions before closing the issue. Does not conclude from source code alone.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "created-twice",
+      "prompt": "Why is my SessionManager created twice in my Koin app?",
+      "expected_output": "Routes to this skill (not koin). B1: checks the definition's lifetime (factory instead of single, two definitions or qualifiers, a scope or isolated context creating its own instance) as suspects. Offers Kotzilla to see actual instance creation at runtime, asking first. Doesn't claim the cause as certain without runtime data.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "no-koin-routes-to-setup",
+      "prompt": "My app freezes on launch, can you diagnose it? It doesn't use any DI framework yet.",
+      "expected_output": "Detects no Koin: this skill doesn't apply. Doesn't run a Koin graph audit. May suggest koin-setup if the user wants DI, but focuses on saying the Koin diagnosis needs Koin in place.",
+      "files": []
+    }
+  ]
+}

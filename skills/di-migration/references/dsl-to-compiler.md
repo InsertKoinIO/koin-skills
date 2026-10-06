@@ -244,8 +244,8 @@ val dispatcherModule = module {
 }
 
 val repoModule = module {
-    // Reified type — qualifier on the constructor param via @Named
-    single<MyRepo>(named("io"))
+    // Plain reified type — the qualifier lives on MyRepo's constructor param
+    single<MyRepo>()
 }
 
 // MyRepo class — @Named on the constructor param tells the compiler which qualifier to use
@@ -298,47 +298,7 @@ scope.close()
 
 ### Android Scope Archetypes
 
-For Android lifecycle scopes, use the scope archetype DSL functions:
-
-```kotlin
-// BEFORE: Old DSL with generic scope
-val activityModule = module {
-    scope<MyActivity> {
-        scoped { ActivityPresenter(get()) }
-    }
-}
-```
-
-```kotlin
-// AFTER: Safe DSL with scope archetypes
-val activityModule = module {
-    activityScope {
-        scoped<ActivityPresenter>()
-    }
-    activityRetainedScope {
-        scoped<SessionCache>()    // Survives configuration changes
-    }
-    fragmentScope {
-        scoped<FragmentPresenter>()
-    }
-    viewModelScope {
-        scoped<ViewModelHelper>()
-    }
-}
-```
-
-Usage in Activity/Fragment:
-```kotlin
-class MainActivity : AppCompatActivity(), AndroidScopeComponent {
-    override val scope: Scope by activityScope()
-    private val presenter: ActivityPresenter by inject()
-}
-
-class DetailFragment : Fragment(), AndroidScopeComponent {
-    override val scope: Scope by fragmentScope()
-    private val presenter: FragmentPresenter by inject()
-}
-```
+`references/scopes.md`.
 
 ## Bindings
 
@@ -487,58 +447,11 @@ startKoin {
 
 ## KMP Modules
 
-The Safe DSL works identically across all KMP targets:
-
-```kotlin
-// commonMain
-val commonModule = module {
-    single<CommonRepository>()
-    single<CommonUseCase>()
-}
-
-// androidMain
-val androidModule = module {
-    includes(commonModule)
-    single { AndroidSqliteDriver(AppDb.Schema, androidContext(), "app.db") as DatabaseDriver }
-}
-
-// iosMain
-val iosModule = module {
-    includes(commonModule)
-    single { NativeSqliteDriver(AppDb.Schema, "app.db") as DatabaseDriver }
-}
-```
-
-### Platform-specific with expect/actual
-
-```kotlin
-// commonMain
-expect fun platformModule(): Module
-
-// androidMain
-actual fun platformModule() = module {
-    single { AndroidPlatformService() as PlatformService }
-}
-
-// iosMain
-actual fun platformModule() = module {
-    single { IosPlatformService() as PlatformService }
-}
-```
+Same Safe DSL on every target; common and platform modules with `expect` / `actual`: `references/rules.md` §7.
 
 ## Compose Integration
 
-No changes on the Compose side — the Safe DSL produces the same Koin modules:
-
-```kotlin
-@Composable
-fun UserScreen() {
-    val viewModel = koinViewModel<UserViewModel>()
-    val service = koinInject<MyService>()
-}
-```
-
-The only change is inside the `module { }` blocks.
+No change on the Compose side — the modules change, not the call sites (`references/entry-points.md`).
 
 ## Mixing Old and New DSL
 

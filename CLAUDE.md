@@ -12,6 +12,7 @@ and `references/` (skill-specific files + generated copies of `shared/`):
 - `skills/koin-setup/` — set up Koin (new, legacy, or alongside existing DI)
 - `skills/koin/` — write Koin code (core, everyday skill)
 - `skills/di-migration/` — move definitions from another DI framework, Koin KSP or Koin 3.x
+- `skills/koin-diagnose/` — Koin errors and app behavior (static suspects → Kotzilla MCP + SDK)
 
 Plugin manifests live under **`.claude-plugin/`**:
 
@@ -25,21 +26,28 @@ Plugin manifests live under **`.claude-plugin/`**:
 
 Content shared by every skill lives under **`shared/`** — one owner file per
 topic (`shared/index.md` lists them): `rules.md`, `principles.md`, `gradle.md`,
-`entry-points.md`, `scopes.md`, `koin-annotations.md`, `koin-safe-dsl.md`,
-`kotzilla.md`.
+`entry-points.md`, `scopes.md`, `testing.md`, `koin-annotations.md`,
+`koin-safe-dsl.md`, `kotzilla.md`.
 
 **No duplication:** a SKILL.md holds its workflow and the decisions only that
 skill owns; every rule, API or version is written once in `shared/` and pointed
 to. Links to Koin docs use full `https://insert-koin.io/docs/...` URLs.
 
-`./build.sh` copies each `shared/*.md` into every `skills/*/references/` with a
-"GENERATED" header. **Edit `shared/`, never the copies**, then run `./build.sh`
-and commit the refreshed copies (the plugin installs straight from the repo, so
-the copies must be committed).
+Sources are duplication-free: `skills/<name>/` holds only that skill's own
+files, `shared/` holds the shared references. Skills link to shared files as
+`references/<file>.md` — those paths exist only in the build output.
 
-There are **no root-level mirrors** of the skill files — each `.skill` bundle is
-zipped directly from `skills/<name>/` into a flat layout. If you see a
-stray `SKILL.md` or `references/` at the repo root, it's accidental — delete it.
+`./build.sh` assembles complete, self-contained skills in **`build/`**
+(git-ignored, never committed): each skill's own files + a copy of every
+`shared/*.md` in its `references/`. Three checks make it fail:
+
+- `scripts/check_duplication.py` (before assembling) — a paragraph of 120+
+  characters written twice in the sources. Write it once in its owner file and
+  point to it.
+- a skill file that would shadow a shared one
+- `scripts/check_build.py` (after) — every built skill holds all its source
+  files and all shared files, byte-identical, every `references/*.md` link
+  resolves, and each `.skill` bundle and the plugin zip match `build/plugin/`.
 
 Local drafts go in `draft/` (git-ignored, never shipped).
 
@@ -50,9 +58,9 @@ Local drafts go in `draft/` (git-ignored, never shipped).
 ```
 
 This validates `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`
-(including that the plugin name is consistent across both), then rebuilds
-`di-migration-skill.skill` and `koin-migration-plugin.zip`. Both artifacts are
-git-ignored — do not commit them.
+(including that the plugin name is consistent across both), assembles
+`build/plugin/` and builds `build/<skill>-skill.skill` (one per skill) and
+`build/koin-migration-plugin.zip`. Everything under `build/` is git-ignored.
 
 ## Adding a new migration path
 

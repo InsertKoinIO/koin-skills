@@ -104,7 +104,7 @@ lockstep. When the last bridge function is gone, the `@Component` interface,
 the `AppComponent` field on `App`, and the `DaggerAppComponent.create(...)`
 call in `onCreate()` all disappear together.
 
-When several consumers need the same bridge: see "Bridging with the existing DI" in the `di-migration` SKILL.md (duplicate, migrate the source first, or promote to a `SharedBridgeModule`).
+Several consumers need the same bridge → "Bridging with the existing DI" in the `di-migration` SKILL.md.
 
 ### Compile-time graph check
 
@@ -116,13 +116,7 @@ co-location).
 
 ### Convention plugin classpath
 
-Same gotcha as Hilt — if you apply the Koin Compiler Plugin via a Gradle
-convention plugin that uses `configure<KoinGradleExtension> { ... }`, the
-classpath dependency must be `implementation`, not `compileOnly`. See
-`hilt-to-koin.md` → "Convention plugin gotcha" for the full snippet, and the
-working example at:
-
-- https://github.com/InsertKoinIO/nowinandroid/blob/koin_plugin/build-logic/convention/src/main/kotlin/KoinConventionPlugin.kt
+Gradle convention plugins: see "Convention plugins" in `references/gradle.md`.
 
 ---
 
@@ -480,21 +474,7 @@ annotation class ActivityScope
 interface ActivitySubcomponent { ... }
 ```
 
-```kotlin
-// AFTER: Koin
-@Scope(MyActivity::class)
-class PresenterImpl(private val repo: Repo) : Presenter
-
-@Scope(MyActivity::class)
-class ActivityAnalytics(private val tracker: Tracker)
-
-// In Activity
-class MyActivity : AppCompatActivity(), AndroidScopeComponent {
-    override val scope: Scope by activityScope()
-
-    private val presenter: Presenter by inject()
-}
-```
+AFTER: `@ActivityScope` (or `@Scope` + `@Scoped`) and `AndroidScopeComponent` in the Activity — `references/scopes.md`.
 
 ## Parameter Resolution
 

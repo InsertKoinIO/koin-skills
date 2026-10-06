@@ -153,8 +153,8 @@ not raw `named("x")` strings scattered across modules (classic DSL only).
 
 Thanks to rule 1, unit tests build classes directly with fakes. The graph is
 verified at compile time by the Koin Compiler Plugin — no runtime graph test
-(`checkModules()` / `verify()` are on their way to deprecation). Use Koin in
-tests only for integration tests that override a few definitions.
+(`checkModules()` / `verify()` are on their way to deprecation). Start Koin in
+a test only when it needs the real graph — `references/testing.md`.
 
 ## 12. Runtime behavior is Kotzilla's job
 

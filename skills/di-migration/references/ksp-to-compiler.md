@@ -137,8 +137,9 @@ With qualifiers:
 // BEFORE
 singleOf(::MyService) { named("production") }
 
-// AFTER
-single<MyService>(named("production"))
+// AFTER — qualifier on the class, plain reified definition
+@Named("production") class MyService(…)
+single<MyService>()
 ```
 
 With options:
@@ -150,8 +151,8 @@ singleOf(::MyService) {
     createdAtStart()
 }
 
-// AFTER
-single<MyService>(named("production")).withOptions {
+// AFTER — @Named("production") on the class
+single<MyService>().withOptions {
     bind<Service>()
     createdAtStart()
 }
@@ -291,16 +292,14 @@ class AppModule
 
 ### Import path change: @KoinViewModel
 
+Only the import changes — the class, `@InjectedParam` and the call sites
+(`koinViewModel { parametersOf(…) }`, `by viewModel { parametersOf(…) }`) stay the same:
+
 ```kotlin
 // BEFORE (KSP)
 import org.koin.android.annotation.KoinViewModel
-
 // AFTER (Compiler Plugin)
 import org.koin.core.annotation.KoinViewModel
-
-// Usage is identical:
-@KoinViewModel
-class MainViewModel(private val repo: UserRepository) : ViewModel()
 ```
 
 ### Import path change: generated .module
@@ -353,31 +352,7 @@ startKoin {
 
 ## ViewModel Changes
 
-```kotlin
-// BEFORE (KSP)
-import org.koin.android.annotation.KoinViewModel
-
-@KoinViewModel
-class DetailViewModel(
-    private val repo: ItemRepository,
-    @InjectedParam private val itemId: String
-) : ViewModel()
-
-// AFTER (Compiler Plugin) — only import changes
-import org.koin.core.annotation.KoinViewModel
-
-@KoinViewModel
-class DetailViewModel(
-    private val repo: ItemRepository,
-    @InjectedParam private val itemId: String
-) : ViewModel()
-
-// Usage in Compose — identical:
-val viewModel = koinViewModel<DetailViewModel> { parametersOf("item_123") }
-
-// Usage in Fragment — identical:
-private val viewModel: DetailViewModel by viewModel { parametersOf("item_123") }
-```
+Only the `@KoinViewModel` import changes — see "Import path change: @KoinViewModel" above.
 
 ## New Features
 

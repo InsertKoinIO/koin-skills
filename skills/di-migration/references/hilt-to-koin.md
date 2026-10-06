@@ -68,7 +68,7 @@ class SettingsViewModel(private val userData: UserDataRepository) : ViewModel()
 When the binding migrates into Koin, delete the bridge function and the
 `@EntryPoint` interface from this module — blast radius stays local.
 
-When several consumers need the same bridge: see "Bridging with the existing DI" in the `di-migration` SKILL.md (duplicate, migrate the source first, or promote to a `SharedBridgeModule`).
+Several consumers need the same bridge → "Bridging with the existing DI" in the `di-migration` SKILL.md.
 
 ### Option C — `Scope.dagger<T>()` helper (for Safe DSL modules)
 
@@ -285,7 +285,6 @@ class App : Application() {
         super.onCreate()
         startKoin<App> {
             androidContext(this@App)
-            androidLogger()
         }
     }
 }
@@ -315,32 +314,7 @@ Hilt graph underneath.
 
 ### Convention plugin gotcha
 
-If you apply the Koin Compiler Plugin through a Gradle convention plugin that
-uses `configure<KoinGradleExtension> { ... }`, the classpath dependency must be
-`implementation`, **not** `compileOnly`:
-
-```kotlin
-// convention plugin's build.gradle.kts — WRONG
-dependencies {
-    compileOnly(libs.koin.compiler.gradlePlugin)
-}
-// Fails at runtime: NoClassDefFoundError: org/koin/compiler/plugin/KoinGradleExtension
-
-// RIGHT
-dependencies {
-    implementation(libs.koin.compiler.gradlePlugin)
-}
-```
-
-The extension class needs to be on the runtime classpath of the convention
-plugin itself because the `configure { }` block executes at build configuration time.
-
-**Working example:** the Koin team maintains a Now-in-Android fork on a `koin_plugin`
-branch that includes a fully-wired `KoinConventionPlugin`. Use it as the
-reference when porting a multi-module Android/KMP project's convention-plugin
-setup:
-
-- https://github.com/InsertKoinIO/nowinandroid/blob/koin_plugin/build-logic/convention/src/main/kotlin/KoinConventionPlugin.kt
+Gradle convention plugins: see "Convention plugins" in `references/gradle.md`.
 
 ### Entry Points
 
@@ -436,102 +410,7 @@ Koin provides **scope archetype annotations** that map directly to Android lifec
 | `ServiceComponent`           | `@Scope(Service::class)` or `@Factory`                 | `scope<Service> { scoped { ... } }` |
 | Custom `@DefineComponent`    | `@Scope(CustomType::class)`                            | `scope<CustomType> { scoped { ... } }` |
 
-### Scope Archetype Imports
-
-```kotlin
-import org.koin.android.annotation.ActivityScope         // Activity lifecycle
-import org.koin.android.annotation.ActivityRetainedScope  // Survives config changes
-import org.koin.android.annotation.FragmentScope          // Fragment lifecycle
-import org.koin.core.annotation.ViewModelScope            // ViewModel lifecycle
-```
-
-### Scope Archetype Examples
-
-```kotlin
-// BEFORE: Hilt ActivityComponent
-@Module
-@InstallIn(ActivityComponent::class)
-object ActivityModule {
-    @Provides @ActivityScoped
-    fun providePresenter(repo: UserRepository): Presenter = PresenterImpl(repo)
-}
-```
-
-```kotlin
-// AFTER: Koin — @ActivityScope archetype
-@ActivityScope
-class PresenterImpl(private val repo: UserRepository) : Presenter
-
-// In Activity — scope tied to Activity lifecycle
-class MainActivity : AppCompatActivity(), AndroidScopeComponent {
-    override val scope: Scope by activityScope()
-    private val presenter: Presenter by inject()
-}
-```
-
-```kotlin
-// BEFORE: Hilt ViewModelComponent
-@Module
-@InstallIn(ViewModelComponent::class)
-object ViewModelModule {
-    @Provides @ViewModelScoped
-    fun provideUseCase(repo: UserRepository): GetUsersUseCase = GetUsersUseCase(repo)
-}
-```
-
-```kotlin
-// AFTER: Koin — @ViewModelScope archetype
-@ViewModelScope
-class GetUsersUseCase(private val repo: UserRepository)
-
-// The use case is scoped to the ViewModel's lifecycle
-```
-
-```kotlin
-// Activity-retained scope (survives configuration changes)
-@ActivityRetainedScope
-class SessionCache(private val api: ApiService)
-```
-
-```kotlin
-// Fragment scope
-@FragmentScope
-class FragmentPresenter(private val repo: Repository)
-```
-
-### Custom Scope Example
-
-```kotlin
-// BEFORE: Hilt custom scope
-@Scope
-@Retention(AnnotationRetention.RUNTIME)
-annotation class AuthScope
-
-@DefineComponent(parent = SingletonComponent::class)
-interface AuthComponent
-
-@DefineComponent.Builder
-interface AuthComponentBuilder {
-    fun build(): AuthComponent
-}
-```
-
-```kotlin
-// AFTER: Koin — much simpler
-class AuthScopeId  // Scope marker class
-
-@Scope(AuthScopeId::class)
-class AuthTokenProvider(private val api: ApiService)
-
-@Scope(AuthScopeId::class)
-class AuthRepository(private val api: ApiService, private val db: AppDatabase)
-
-// Open/close scope manually
-val authScope = getKoin().createScope<AuthScopeId>("auth_session")
-val tokenProvider = authScope.get<AuthTokenProvider>()
-// When done:
-authScope.close()
-```
+Koin side (archetype annotations, DSL, component usage, custom scopes): `references/scopes.md`.
 
 ## Assisted Inject
 
@@ -609,22 +488,7 @@ class SyncWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params)
 ```
 
-```kotlin
-// AFTER: Koin
-@KoinWorker
-class SyncWorker(
-    context: Context,
-    params: WorkerParameters,
-    private val api: ApiService
-) : CoroutineWorker(context, params)
-
-// Application setup
-startKoin {
-    androidContext(this@App)
-    workManagerFactory()
-    modules(module<AppModule>())
-}
-```
+AFTER: `@KoinWorker` + `workManagerFactory()` — "WorkManager" in `references/entry-points.md`.
 
 ## Compose Integration
 

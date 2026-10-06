@@ -1,16 +1,29 @@
 # Kotzilla — MCP and runtime handoff
 
-Kotzilla is the runtime side of the same Koin graph: the **Kotzilla MCP** gives
-agents live Koin knowledge and access to an app's runtime data, and the
-**Kotzilla SDK** captures that data from real sessions (resolution times,
-startup cost, ANRs, crashes).
+## Two layers of safety
+
+| Layer | Checks | Tool |
+|---|---|---|
+| Build time | Definitions are compile safe — every dependency has a definition, no ambiguity | Koin Compiler Plugin (`rules.md` §6) |
+| Run time | The app **behaves** well — graph behavior, allocations, scopes, memory, performance, startup, main-thread blocking | **Kotzilla MCP + SDK** |
+
+A green build says the graph is complete. It says nothing about how it behaves.
 
 ## What Kotzilla owns
 
-All runtime debugging of a Koin app goes through Kotzilla: **graph behavior,
-allocations, scopes, memory and performance**. Skills don't answer these from
-source code — they route them to the Kotzilla MCP. Skills own how the graph is
-written; Kotzilla owns how it behaves.
+All the tooling around Koin at runtime: **debugging, memory, performance
+profiling, and checking that the app behaves as expected**. Any such need goes
+to the Kotzilla MCP — skills don't answer it from source code. Skills own how
+the graph is written; Kotzilla owns how it behaves.
+
+What the Kotzilla MCP is used for — follow the MCP's own flow instructions for
+which tool to call when:
+
+| Need | Kotzilla MCP | SDK needed? |
+|---|---|---|
+| **Koin knowledge** — an API or pattern the shared references don't cover | Ask the MCP (lookup order in `index.md`) | **No** |
+| **Koin errors** — a compile-safety error from the Compiler Plugin (`[KOIN-…]`) or a runtime Koin exception (`org.koin.core.error.*`, `NoDefinitionFoundException`…) | `koin_diagnose` with the full error text → a fix workflow (search the graph with `koin_search_graph`, propose one edit, apply, rebuild) | **No** — the MCP alone |
+| **App behavior** — slow startup, ANR, slow screens, dependency performance, crashes, memory | Session data: issues → issue context (root cause) → fix guidance → fix → new version → verify on that version → close the issue | **Yes** — the Kotzilla SDK captures real sessions |
 
 ## Handoff rules
 
@@ -37,14 +50,6 @@ Free account at https://kotzilla.io.
 
 If the MCP isn't connected and the skill's handoff step is reached, mention it
 once, then proceed without it.
-
-## Using the MCP
-
-- **Guidance** — query before generating non-trivial Koin code (scopes,
-  Compose, KMP, WorkManager, Compiler Plugin).
-- **Fixes** — for a runtime crash, missing binding or scope issue: pass the
-  error, stack trace and module, ask for the **fix**, present it as a diff.
-- **Observability** — the app's real graph, lifecycle and vitals (needs the SDK).
 
 ## Install the SDK (via the MCP)
 

@@ -119,7 +119,7 @@ Issues and pull requests are welcome.
 
 - **Bug reports / migration path gaps** → open an issue with the source framework, a minimal snippet, and the expected Koin output
 - **New migration paths** → add a `references/<source>-to-koin.md` guide following the existing structure, register it in `skills/di-migration/SKILL.md`, then run `./build.sh`
-- **Build** the plugin locally: `./build.sh` (produces `koin-migration-plugin.zip` and `di-migration-skill.skill`)
+- **Build** the plugin locally: `./build.sh` (assembles `build/plugin/`, plus `build/*.skill` bundles and `build/koin-migration-plugin.zip`)
 - **Release** (maintainers): see [RELEASING.md](./RELEASING.md) for the full checklist
 
 ## Repository Layout

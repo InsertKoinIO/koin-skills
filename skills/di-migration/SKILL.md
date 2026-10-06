@@ -1,21 +1,15 @@
 ---
 name: di-migration
 description: >
-  Automate migration between Kotlin/Android dependency injection frameworks.
-  Covers Hilt → Koin, Dagger → Koin, Toothpick → Koin, Kodein → Koin, Koin 3.x → Koin 4.x
-  upgrades, Koin DSL → Koin 4.x Safe DSL with Compiler Plugin, and Koin KSP Annotations → Koin Compiler Plugin.
-  Use this skill whenever the user mentions migrating, converting, or switching DI frameworks,
-  refactoring from Hilt/Dagger/Toothpick/Kodein to Koin, removing Hilt/Dagger/Toothpick/Kodein,
-  upgrading Koin versions, migrating from classic Koin DSL to Koin Safe DSL or annotations with
-  Compiler Plugin, or moving from KSP-based annotations to the Koin Compiler Plugin. Also trigger
-  when the user pastes Hilt/Dagger/Toothpick/Kodein module code and asks to convert it, when they
-  want compile-time verification for Koin modules, or when they mention "dependency injection
-  migration", "replace Hilt with Koin", "move away from Dagger", "migrate from Toothpick",
-  "migrate from Kodein", "Kodein to Koin", "convert DSL to annotations", "add Koin compiler",
-  "Koin KSP", "Koin compiler plugin", "remove KSP", "move to Koin compiler", or any variation
-  involving DI framework changes in Kotlin/Android/KMP projects. For greenfield projects or
-  manual-DI code, this skill is not needed — point the user at the official Koin docs at
-  https://insert-koin.io and apply the same Safe DSL + Compiler Plugin rules directly.
+  Migrate Kotlin / Android / KMP projects to Koin 4.x with the Koin Compiler Plugin:
+  Hilt, Dagger 2, Toothpick and Kodein to Koin, Koin 3.x to 4.x, classic Koin DSL to
+  Safe DSL, and Koin KSP annotations to the Compiler Plugin. Progressive, module by
+  module, keeping the old container running until the last binding moves. Use when
+  the user wants to migrate, convert or switch DI frameworks, remove Hilt / Dagger /
+  Toothpick / Kodein, upgrade Koin, move off KSP, or pastes Hilt / Dagger / Toothpick
+  / Kodein module code to convert — "replace Hilt with Koin", "move away from
+  Dagger", "Kodein to Koin", "Koin KSP to compiler plugin", "upgrade to Koin 4".
+  Adding Koin to a project with no DI is koin-setup.
 ---
 
 # DI Migration Skill

@@ -227,21 +227,10 @@ class RetrofitProvider @Inject constructor(
 }
 ```
 
+AFTER: the same `@Module` with `@Singleton fun` builders as Dagger — "Module
+with @Provides" in `references/dagger-to-koin.md`. Then:
+
 ```kotlin
-// AFTER: Koin @Module with annotated functions
-@Module
-class NetworkModule {
-    @Singleton
-    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
-
-    @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit =
-        Retrofit.Builder()
-            .client(client)
-            .baseUrl(BASE_URL)
-            .build()
-}
-
 // ApiServiceImpl can be annotated directly since you own it
 @Singleton
 class ApiServiceImpl(private val retrofit: Retrofit) : ApiService

@@ -1,20 +1,16 @@
 ---
 name: koin-setup
 description: >
-  Set up dependency injection with Koin in a Kotlin, Android (new or legacy, Views or
-  Compose), Compose Multiplatform, KMP or Ktor project — Koin 4.x with the Koin
-  Compiler Plugin. Works on a project with no DI, and as the first step of a migration:
-  Koin is set up alongside an existing container (Toothpick, Dagger 2, Hilt, Kodein).
-  Covers Gradle (BOM, Compiler Plugin, artifacts per platform), the choice between
-  Koin Annotations and Koin DSL, the first modules, starting Koin (Android Application,
-  KMP shared start function, Compose, Ktor, iOS) and compile-time graph verification.
-  Use whenever the user wants to add dependency injection or a DI framework to a
-  project, set up a new Kotlin / Android / KMP app with DI, or says "add DI", "set up
-  dependency injection", "which DI framework", "add Koin", "set up Koin", "Koin from
-  scratch", "start Koin", "wire startKoin", "Koin in KMP", "Koin with Ktor", "Koin
-  Compose Multiplatform", "add Koin next to Dagger / Toothpick". Moving existing
-  definitions from another DI framework, Koin KSP or Koin 3.x is the di-migration
-  skill. For crashes, slow startup or ANRs, use koin-diagnose.
+  Set up dependency injection with Koin (4.x, Koin Compiler Plugin) in a Kotlin,
+  Android (new or legacy, Views or Compose), Compose Multiplatform, KMP or Ktor
+  project: Gradle, Annotations or DSL, first modules, starting Koin, compile-time
+  verification. Works with no DI yet, or alongside an existing container (Toothpick,
+  Dagger 2, Hilt, Kodein) as the first step of a migration. Use whenever the user
+  wants to add dependency injection or a DI framework, set up a new app with DI, or
+  says "add DI", "set up dependency injection", "which DI framework", "add Koin",
+  "set up Koin", "start Koin", "Koin in KMP", "Koin with Ktor", "add Koin next to
+  Dagger". Moving existing definitions from another framework, Koin KSP or Koin 3.x
+  is di-migration; crashes, slow startup or ANRs are koin-diagnose.
 ---
 
 # Koin Setup

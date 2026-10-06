@@ -50,3 +50,9 @@ dependencies {
   }
   ```
 - **Kotlin** — `2.3.20` or later (`rules.md` §3).
+- **Convention plugins** — when the Compiler Plugin is applied through a Gradle
+  convention plugin that uses `configure<KoinGradleExtension> { … }`, the
+  convention plugin's dependency on the Koin Gradle plugin must be
+  `implementation`, not `compileOnly` (otherwise `NoClassDefFoundError:
+  org/koin/compiler/plugin/KoinGradleExtension` at configuration time). Working
+  example: https://github.com/InsertKoinIO/nowinandroid/blob/koin_plugin/build-logic/convention/src/main/kotlin/KoinConventionPlugin.kt

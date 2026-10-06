@@ -260,20 +260,7 @@ else, constructor injection.
 
 ## Testing
 
-```kotlin
-class RepositoryTest : KoinTest {
-    private val repo: Repository by inject()
-
-    @get:Rule
-    val koinTestRule = KoinTestRule.create {
-        modules(appModule, module {
-            single<FakeApiService>().bind<ApiService>()   // override production binding
-        })
-    }
-}
-```
-
-Graph verification is done at compile time by the Koin Compiler Plugin. `checkModules()` and `verify()` are on their way to deprecation — don't add them.
+`references/testing.md`.
 
 ## When a lambda is the right form
 

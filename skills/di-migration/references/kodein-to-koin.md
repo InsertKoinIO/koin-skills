@@ -158,56 +158,10 @@ bind<HttpClient>(tag = "public") with singleton { HttpClient(publicConfig) }
 val auth: HttpClient by instance(tag = "auth")
 ```
 
-**Koin Safe DSL** uses `named("...")` (string) or a custom qualifier object
-(type-safe) at definition and retrieval sites:
-
-```kotlin
-val networkModule = module {
-    single<HttpClient>(named("auth"))   { HttpClient(get(named("authConfig"))) }
-    single<HttpClient>(named("public")) { HttpClient(get(named("publicConfig"))) }
-
-    single<Service> { Service(client = get(named("auth"))) }
-}
-```
-
-Kodein's `tag = "x"` maps to Koin's `@Named("x")`. In Safe DSL, the qualifier
-lives on the **class declaration** (or a ctor parameter for the consumer side)
-— not as an argument to `single<T>()`. The Compiler Plugin reads `@Named` off
-the class/param.
-
-```kotlin
-// Qualifier on the class itself
-@Named("auth")
-class AuthHttpClient(val cfg: Config) : HttpClient
-
-@Named("public")
-class PublicHttpClient(val cfg: Config) : HttpClient
-
-// Qualifier on a ctor parameter — resolves the matching qualified dependency
-class Service(@Named("auth") val client: HttpClient)
-
-// Module — plain reified single<T>(), no qualifier argument
-val networkModule = module {
-    single<AuthHttpClient>()
-    single<PublicHttpClient>()
-    single<Service>()
-}
-
-// Call site
-val auth: HttpClient = get(named("auth"))
-```
-
-**Do not write `single<HttpClient>(named("auth")) { ... }`** — that's the
-classic-DSL lambda form; it's reserved as a fallback for third-party types that
-can't be annotated (e.g. a `Config` with per-qualifier values):
-
-```kotlin
-// Legitimate classic-DSL fallback: Config is just a data class, no useful annotations
-val networkModule = module {
-    single<Config>(named("authConfig"))   { Config("...") }
-    single<Config>(named("publicConfig")) { Config("...") }
-}
-```
+Kodein's `tag = "x"` maps to Koin's `@Named("x")`, placed on the class (or on
+the consumer's constructor parameter), with a plain `single<T>()` in the module —
+see "Qualifiers" in `references/koin-safe-dsl.md`. `named("x")` stays only for
+classic-DSL lambdas on types you can't annotate (`references/rules.md` §1).
 
 **Stay on `@Named` for Kodein migrations** — don't introduce custom `@Qualifier`
 annotations. Kodein's string-based `tag` semantics map 1:1 to `@Named`, and

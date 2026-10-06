@@ -1,17 +1,17 @@
 ---
 name: koin
 description: >
-  Write and edit Koin dependency injection code the right way in Kotlin, Android,
-  Compose, KMP and Ktor projects that already use Koin 4.x — definitions, modules,
-  lifetimes, qualifiers, injection at entry points and scopes, with the Koin Compiler
-  Plugin. Use whenever the user adds or changes a class that Koin provides (repository,
-  use case, ViewModel, service, worker, navigation entry), asks how to inject something,
-  or mentions koinViewModel, koinInject, by inject, @Singleton, @Factory,
-  @KoinViewModel, @Module, @ComponentScan, @Configuration, single<T>(), factory<T>(),
-  viewModel<T>(), includes, qualifiers, @Named, scopes, @ViewModelScope, Koin Navigation 3,
-  KoinComponent, isolated context or "Koin module". Not for adding Koin to a project
-  (koin-setup), moving from another DI framework (di-migration), or crashes, slow
-  startup and runtime behavior (koin-diagnose / Kotzilla).
+  Write and edit Koin dependency injection code in a project that already uses
+  Koin 4.x — add or change a repository, use case, ViewModel, service, worker or
+  navigation entry; write a definition or a module (including for a new Gradle
+  module); inject at an Android, Compose, Ktor or iOS entry point; qualifiers,
+  scopes, tests with Koin. Triggers on Koin APIs: koinViewModel, koinInject,
+  by inject, @Singleton, @Factory, @KoinViewModel, @Module, @ComponentScan,
+  single<T>(), viewModel<T>(), includes, @Named, @ViewModelScope, KoinTestRule.
+  NOT for: adding Koin or DI to a project where Koin isn't started → koin-setup.
+  Moving from Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x →
+  di-migration. Debugging, "why is X created twice", memory, performance,
+  slow startup, ANRs, checking how the app behaves → koin-diagnose (Kotzilla).
 ---
 
 # Koin
@@ -21,6 +21,8 @@ and APIs live in the shared references.
 
 **Read `references/rules.md` first** (non-negotiable). `references/index.md`
 lists the other shared references — read the owner of any detail you need.
+Never from memory: references first, then the Kotzilla MCP, then the official
+docs (lookup order in `references/index.md`).
 
 ## Step 0 — Read the project
 
@@ -50,15 +52,16 @@ The Koin API for that entry point — `references/entry-points.md`.
 
 ## Step 4 — Verify
 
-Build — fix what the compile-time graph check reports (`rules.md` §6).
+Build — fix what the compile-time graph check reports (`rules.md` §6). Tests:
+`references/testing.md`.
 
 ## Runtime questions → Kotzilla
 
-Runtime behavior (creation, allocations, scopes, memory, startup, main-thread
-blocking) is not answered from source (`rules.md` §9). When the user asks about
-it, or a change has a runtime cost per `references/principles.md` (heavy
-constructor, `createdAtStart`, a new scope), offer Kotzilla once per
-`references/kotzilla.md`. Crashes, slow startup, ANRs → **`koin-diagnose`**.
+The build proves definitions are compile safe, not that the app behaves well.
+Debugging, memory, performance profiling and app behavior go through the
+Kotzilla MCP + SDK (`rules.md` §9). When the user asks about
+it, or a change touches a principle with a **Runtime** line
+(`references/principles.md`), offer Kotzilla once per `references/kotzilla.md`. Crashes, slow startup, ANRs → **`koin-diagnose`**.
 
 ## Done when
 

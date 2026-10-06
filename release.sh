@@ -53,8 +53,8 @@ fi
 # --- build ------------------------------------------------------------------
 
 ./build.sh >/dev/null
-SKILLS=("$ROOT"/*-skill.skill)
-PLUGIN="$ROOT/koin-migration-plugin.zip"
+SKILLS=("$ROOT"/build/*-skill.skill)
+PLUGIN="$ROOT/build/koin-migration-plugin.zip"
 [[ -f "${SKILLS[0]}" ]] || { echo "error: no .skill bundles built" >&2; exit 1; }
 [[ -f "$PLUGIN" ]] || { echo "error: $PLUGIN not built" >&2; exit 1; }
 
