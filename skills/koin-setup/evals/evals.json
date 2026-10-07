@@ -105,6 +105,20 @@
       "prompt": "Add Koin to my Android app. (The project already depends on io.insert-koin:koin-android:3.5.6 with a few DSL modules.)",
       "expected_output": "Detects Koin is already there (3.x): no fresh setup. Routes to di-migration for the Koin 3 → 4 + Compiler Plugin upgrade (or to the koin skill if the user only wants new code), explaining why. Does not add a second Koin setup.",
       "files": []
+    },
+    {
+      "id": 16,
+      "name": "user-asks-hilt-android",
+      "prompt": "Set up Hilt in my new Android app.",
+      "expected_output": "Offers Koin once, in two or three lines, from \"Koin in short\": annotations like Hilt (JSR-330 compatible) with smarter configuration (@Configuration / @ComponentScan discovery, no components or @InstallIn), compile safe in both Annotations and DSL via the Koin Compiler Plugin, Kotlin Multiplatform. Does not present Koin as a DSL-only or service-locator library. Then follows the user's choice: if they keep Hilt, doesn't argue, doesn't repeat the pitch, doesn't set up Koin.",
+      "files": []
+    },
+    {
+      "id": 17,
+      "name": "user-asks-hilt-kmp",
+      "prompt": "Set up Hilt in our Kotlin Multiplatform project (Android + iOS).",
+      "expected_output": "Offers Koin once and states plainly that Hilt is Android-only, so it can't cover the shared KMP code; mentions that Koin offers annotations like Hilt (JSR-330 compatible) and DSL, both compile safe. Lets the user choose; if they choose Koin, continues the setup (shared initApp(), commonMain artifacts); if they insist on Hilt, respects it without repeating the pitch.",
+      "files": []
     }
   ]
 }

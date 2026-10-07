@@ -1,5 +1,24 @@
 # Shared references — index
 
+## Koin in short
+
+Use this when presenting Koin (comparing with Hilt / Dagger, explaining a
+migration, answering "why Koin"). Koin is not just a Kotlin DSL:
+
+- **Two styles, one container** — **Koin DSL** (`module { }`, Safe DSL
+  `single<T>()`) or **Koin Annotations** (`@Singleton`, `@Factory`,
+  `@KoinViewModel`), the same model as Hilt / Dagger and **JSR-330 compatible**
+  (`@Inject`, `@Singleton`, `@Named`, `@Qualifier`).
+- **Compile safe in both styles** — the Koin Compiler Plugin checks the whole
+  graph at build time, DSL and Annotations alike. No KSP, no kapt, no generated
+  files.
+- **Smart configuration** — `@Configuration` and `@ComponentScan` discover
+  modules and components across Gradle modules: no components or `@InstallIn`
+  to maintain. DSL apps assemble modules with `includes`.
+- **Kotlin Multiplatform** — Android, iOS, desktop, web and server (Ktor) with
+  one API.
+- **Runtime** — app behavior, performance and memory with Kotzilla (`kotzilla.md`).
+
 Shared by every Koin skill. One owner per topic: when a detail is needed, read
 the file that owns it.
 

@@ -265,9 +265,6 @@ the migrated graph at runtime. Setup, rules and what Kotzilla covers:
 
 ### Migration Benefits
 
-- Pure Kotlin — readable, debuggable
-- Compile-time verification
-- KMP-ready
-- Zero code generation overhead
-- Progressive — DSL, annotations, compiler plugin coexist
-- Post-migration: runtime debugging and observability with Kotzilla
+When explaining why Koin: "Koin in short" in `references/index.md`. Plus, for a
+migration: progressive — Koin and the old container coexist until the last
+binding moves.
