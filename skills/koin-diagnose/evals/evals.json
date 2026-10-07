@@ -42,6 +42,27 @@
       "prompt": "My app freezes on launch, can you diagnose it? It doesn't use any DI framework yet.",
       "expected_output": "Detects no Koin: this skill doesn't apply. Doesn't run a Koin graph audit. May suggest koin-setup if the user wants DI, but focuses on saying the Koin diagnosis needs Koin in place.",
       "files": []
+    },
+    {
+      "id": 7,
+      "name": "memory-leak-context-singleton",
+      "prompt": "Our Koin app leaks memory. LeakCanary shows an Activity retained by a singleton.",
+      "expected_output": "Track B. Static suspects: a single holding an Activity / non-application Context or another shorter-lived object (principle: never inject shorter-lived into longer-lived), scopes never closed. Proposes fixes (androidContext() application context, scope or factory, close scopes). Labels them suspects; offers Kotzilla to confirm scope / lifecycle behavior at runtime, asking first.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "user-declines-kotzilla",
+      "prompt": "Audit our Koin setup for performance problems, but we don't want to install any third-party SDK.",
+      "expected_output": "Respects the refusal: does a static audit only (Track B step 1) — each finding with file, definition, mechanism and fix, labeled as a suspect. Mentions once that runtime proof would need Kotzilla, then stops there. Never installs or pushes the SDK again.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "audit-koin-graph",
+      "prompt": "Can you audit my Koin graph? Here is my app: [multi-module Android app with annotations].",
+      "expected_output": "Static audit against the principles with a Runtime line and the scope rules (eager createdAtStart, heavy constructors, Context in singletons, lifetimes, unclosed scopes) plus configuration checks from the rules (discovery triad, focused @ComponentScan, includes). Findings labeled suspects with fixes, ranked by likely impact. Offers Kotzilla once for runtime proof, asking first.",
+      "files": []
     }
   ]
 }

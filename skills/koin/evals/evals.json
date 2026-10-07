@@ -49,6 +49,48 @@
       "prompt": "How do I inject my Scheduler into an Android BroadcastReceiver with Koin?",
       "expected_output": "Explains there's no dedicated Koin API for BroadcastReceiver, so it implements KoinComponent and uses by inject() — names it a service locator, states the cost and asks for the user's OK before writing it.",
       "files": []
+    },
+    {
+      "id": 8,
+      "name": "new-gradle-module",
+      "prompt": "Our app already uses Koin with annotations. I just created a new Gradle module :feature:search. Wire it with Koin.",
+      "expected_output": "Handled by the koin skill (Koin is already started — not koin-setup). Creates a root module in the feature's .di package with @Module @Configuration @ComponentScan(\"<feature package>\") — focused package passed explicitly. Applies the Compiler Plugin to the new Gradle module; adds koin-annotations if missing. No modules(...) change at start (discovery).",
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "two-implementations-qualifier",
+      "prompt": "I have two HttpClient implementations in my Koin Safe DSL project, one authenticated and one public. How do I declare and inject them?",
+      "expected_output": "Qualifiers as annotations: @Named(\"auth\") / @Named(\"public\") (or custom @Qualifier) on the implementation classes, plain single<AuthHttpClient>() / single<PublicHttpClient>(), @Named on the consumer's constructor parameter. Does not write single<HttpClient>(named(\"auth\")) { … } for classes the project owns. Suggests distinct types first if that removes the need for a qualifier.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "integration-test-with-koin",
+      "prompt": "Write a test for CheckoutUseCase in my Koin project, replacing PaymentGateway with a fake.",
+      "expected_output": "First option: a plain unit test constructing CheckoutUseCase with a fake (constructor injection, no Koin). If Koin is wanted: KoinTest + KoinTestRule.create { modules(checkoutModule) } (koin-test-junit4) or KoinTestExtension (junit5), by inject() in the test, declare<PaymentGateway> { FakePaymentGateway() } to replace the definition. No checkModules / verify test.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "kmp-platform-specific",
+      "prompt": "In my KMP project with Koin annotations, I need a Platform interface with an Android and an iOS implementation.",
+      "expected_output": "Platform interface in commonMain; @Module expect class PlatformModule in commonMain and @Module actual class PlatformModule per target with @Singleton fun builders returning the platform implementation (or annotated actual classes). Module placed in a .di package; wired via discovery / includes from the common root module.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "long-tail-api-lookup",
+      "prompt": "How do I load Koin properties from a file and use them in a definition?",
+      "expected_output": "Looks it up instead of answering from memory: shared references first; not covered there → asks the Kotzilla MCP if connected; otherwise (mentioning the MCP once) uses the official doc page https://insert-koin.io/docs/reference/koin-core/start-koin/. Answer is consistent with the found source.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "name": "heavy-constructor-flagged",
+      "prompt": "Add a ConfigRepository singleton to my Koin app; its constructor reads and parses a 2 MB JSON file from assets.",
+      "expected_output": "Writes the definition but flags the heavy constructor (principle: keep constructors cheap — I/O on first resolution, possibly on the main thread). Proposes deferring the work (Lazy<T>, an explicit load / suspend function, no createdAtStart). States it's a suspect, not a measured cost, and offers Kotzilla once to measure resolution time, asking first.",
+      "files": []
     }
   ]
 }

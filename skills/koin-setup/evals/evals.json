@@ -42,6 +42,69 @@
       "prompt": "My old Android app uses Activities and Fragments with XML layouts, and everything is created by hand. Can we add DI to it?",
       "expected_output": "Triggers without Koin being named. Works for a Views-based app: koin-android, no Compose artifacts. Asks for the style. Modules per feature with constructor injection. Starts Koin in Application.onCreate. Activities/Fragments use by viewModel() / by inject() / by activityViewModel() from koin-android, no KoinComponent. Custom Views: asks the user whether to pass dependencies from the host or use KoinComponent. Build = compile-time check, run once, offer Kotzilla.",
       "files": []
+    },
+    {
+      "id": 7,
+      "name": "cmp-started-from-compose",
+      "prompt": "Add Koin to my Compose Multiplatform desktop + web app. There's no Android Application class; everything starts from the root composable.",
+      "expected_output": "Starts Koin from the root composable with KoinApplication(configuration = koinConfiguration { modules(appModule) }) (or koinConfiguration<App>() for annotations) — not startKoin in an Application, no KoinContext. Asks for the style. koin-core, koin-compose, koin-compose-viewmodel in commonMain. ViewModels via koinViewModel() as default parameters.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "sdk-library-isolated-context",
+      "prompt": "I'm building an Android SDK (a library other apps embed). I want to use Koin inside it.",
+      "expected_output": "Isolated context, never startKoin (the host app may use Koin): a private koinApplication { } instance held by the SDK (koinApplication<SdkApp>() for annotations). SDK Android classes use an internal SdkKoinComponent that overrides getKoin(); Compose UI wrapped in KoinIsolatedContext(context = …). Constructor injection inside the SDK; the SdkKoinComponent is the boundary, not a service locator in normal layers.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "contentprovider-before-oncreate",
+      "prompt": "Our Android app has a ContentProvider that needs a repository from Koin, but it runs before Application.onCreate(). How do we set up Koin?",
+      "expected_output": "Uses koin-androidx-startup: the Application implements KoinStartup and returns koinConfiguration { androidContext(…); modules(…) } (koinConfiguration<App>() for annotations) from onKoinStartup(); no startKoin call. Notes @KoinExperimentalAPI and that other initializers needing Koin declare KoinInitializer in dependencies(). The ContentProvider itself is a KoinComponent (no dedicated API), stated as a service locator.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "old-kotlin-version",
+      "prompt": "Add Koin with the compiler plugin to my Android app. We're on Kotlin 2.0.21 with KSP for Room and Hilt-free.",
+      "expected_output": "Detects Kotlin below 2.3.20: the Compiler Plugin needs a Kotlin bump. Lists what the bump moves (KSP version for Room, Compose Compiler, AGP minimum, kapt processors) and asks the user before changing anything. Does not silently downgrade to Koin without the plugin; may mention the no-plugin option only as the user's choice.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "android-multi-module",
+      "prompt": "Set up Koin with annotations in our Android app. It has :app, :core:data, :core:network and three :feature:* Gradle modules.",
+      "expected_output": "Applies the Compiler Plugin in every Gradle module that declares definitions (or via a convention plugin, with the classpath dependency as implementation); koin-bom + only needed artifacts per module. One root module per Gradle module, in a .di package, with @Module @Configuration @ComponentScan(\"<that module's package>\") — focused packages, not com.acme. :app has @KoinApplication + startKoin<App> { androidContext(...) } with no modules(...) (discovery). Starts with one feature, compiles, runs, offers Kotzilla once.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "android-modern-stack",
+      "prompt": "New Android app: Jetpack Compose, Navigation 3, a few ViewModels and a WorkManager sync worker. Add DI.",
+      "expected_output": "Triggers without Koin being named; asks for the style. Artifacts: koin-android, koin-compose, koin-compose-viewmodel, koin-compose-navigation3, koin-androidx-workmanager — nothing else. Starts Koin in Application with workManagerFactory(). Navigation 3 entries declared with navigation<Route> { } in a DSL module (DSL only for now — told to the user if Annotations were chosen) and koinEntryProvider() in NavDisplay with rememberViewModelStoreNavEntryDecorator(). Worker via @KoinWorker / worker<T>(). ViewModels via koinViewModel() default parameters.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "name": "kmp-native-uis",
+      "prompt": "Our KMP project shares business logic only: the Android app uses Jetpack Compose and the iOS app uses SwiftUI. Add Koin.",
+      "expected_output": "Shared modules in commonMain (koin-core); koin-android in androidMain. One shared initApp() in commonMain, called from Android Application (with androidContext) and from the iOS app init (InitAppKt.doInitApp()). Swift gets shared objects through exported functions or a small iosMain bridge class (KoinComponent at the platform boundary — accepted). No Compose Multiplatform assumptions; SwiftUI consumes shared ViewModels only through a dedicated integration.",
+      "files": []
+    },
+    {
+      "id": 14,
+      "name": "plain-jvm-app",
+      "prompt": "Add dependency injection to my Kotlin command-line app (JVM, plain main function, no framework).",
+      "expected_output": "Triggers without Koin being named; asks for the style. koin-core (+ koin-annotations if Annotations) only — no Android or Compose artifacts. Starts Koin in main: startKoin<App>() with @KoinApplication for Annotations, or startKoin { modules(appModule) } for DSL; printLogger() only if logging is wanted. Constructor injection; retrieval only at main.",
+      "files": []
+    },
+    {
+      "id": 15,
+      "name": "already-on-koin-3",
+      "prompt": "Add Koin to my Android app. (The project already depends on io.insert-koin:koin-android:3.5.6 with a few DSL modules.)",
+      "expected_output": "Detects Koin is already there (3.x): no fresh setup. Routes to di-migration for the Koin 3 → 4 + Compiler Plugin upgrade (or to the koin skill if the user only wants new code), explaining why. Does not add a second Koin setup.",
+      "files": []
     }
   ]
 }
