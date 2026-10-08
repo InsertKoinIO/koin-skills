@@ -53,7 +53,8 @@ where Koin starts (Step 4).
 
 Ask the user; never pick silently (`rules.md` §1). For a new project,
 **recommend Koin Annotations** (discovery across Gradle modules, safer at
-scale); Koin DSL if the team prefers explicit module assembly. Coming from
+scale); Koin DSL if the team prefers to keep DI out of its classes, with all
+the wiring in separate, explicit modules. Coming from
 Dagger / Hilt: Annotations (JSR-330 compatible). State the choice before writing
 code.
 

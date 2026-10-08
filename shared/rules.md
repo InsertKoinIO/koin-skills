@@ -15,7 +15,8 @@ Koin supports two styles, both compiled by the Koin Compiler Plugin:
   JSR-330 compatible (`@Inject`, `@Singleton`, `@Named`, `@Qualifier` from
   `javax.inject` / `jakarta.inject`), which suits apps coming from Dagger / Hilt.
   Prefer `@Singleton` over `@Single`.
-- **Koin DSL** — `module { }` blocks. Three forms, all compiled **and
+- **Koin DSL** — `module { }` blocks; keeps DI out of the code (no annotations
+  on classes, wiring kept separate). Three forms, all compiled **and
   compile-time checked** by the Compiler Plugin (since 1.2.x — including
   `singleOf(::T)` and the `get()` calls inside lambdas):
 

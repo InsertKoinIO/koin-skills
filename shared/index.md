@@ -9,6 +9,9 @@ migration, answering "why Koin"). Koin is not just a Kotlin DSL:
   `single<T>()`) or **Koin Annotations** (`@Singleton`, `@Factory`,
   `@KoinViewModel`), the same model as Hilt / Dagger and **JSR-330 compatible**
   (`@Inject`, `@Singleton`, `@Named`, `@Qualifier`).
+- **DSL keeps DI out of the code** — classes carry no DI annotations; all the
+  wiring lives in separate `module { }` files. For teams that don't want DI to
+  spread into their codebase.
 - **Compile safe in both styles** — the Koin Compiler Plugin checks the whole
   graph at build time, DSL and Annotations alike. No KSP, no kapt, no generated
   files.
