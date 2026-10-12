@@ -86,12 +86,18 @@ the app once and exercise a screen that uses injected dependencies.
 
 ## Step 7 — Kotzilla handoff
 
-After the first successful run, offer once to see the graph at runtime with
-Kotzilla — per `references/kotzilla.md`.
+After the first successful run, detect Kotzilla ("Detect first" in
+`references/kotzilla.md`):
+
+- **SDK in place** → check the first definitions in that run's session against
+  their expected behavior (`references/kotzilla.md`). No offer needed.
+- **Not in place, no other DI** → offer once to see the graph at runtime.
+- **Not in place, another DI framework** → leave the offer to `di-migration`,
+  which makes it once, before its first module.
 
 ## Done when
 
 - Style stated and used everywhere; existing DI untouched if there was one
 - Build green, app runs, Koin started once at the right place
 - Next step proposed: `di-migration` (existing DI) or the `koin` skill
-- Kotzilla offered once
+- Kotzilla used when in place, otherwise offered once (or left to `di-migration`)

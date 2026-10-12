@@ -59,12 +59,20 @@ Build — fix what the compile-time graph check reports (`rules.md` §6). Tests:
 
 The build proves definitions are compile safe, not that the app behaves well.
 Debugging, memory, performance profiling and app behavior go through the
-Kotzilla MCP + SDK (`rules.md` §9). When the user asks about
-it, or a change touches a principle with a **Runtime** line
-(`references/principles.md`), offer Kotzilla once per `references/kotzilla.md`. Crashes, slow startup, ANRs → **`koin-diagnose`**.
+Kotzilla MCP + SDK (`rules.md` §9). Detect what's in place first ("Detect
+first" in `references/kotzilla.md`):
+
+- **SDK in place** and the change adds or changes a lifetime, a scope, or a
+  principle with a **Runtime** line (`references/principles.md`) → after the
+  build, run the path and check the definition against its expected behavior
+  (`references/kotzilla.md`). Report it verified, a mismatch, or not verified.
+- **Not in place** → when the user asks about runtime, or the change touches a
+  principle with a **Runtime** line, offer Kotzilla once.
+
+Crashes, slow startup, ANRs → **`koin-diagnose`**.
 
 ## Done when
 
 - Code follows the project's style and conventions; nothing rewritten unasked
 - Build green
-- Runtime cost flagged and Kotzilla offered when relevant
+- Runtime cost flagged; Kotzilla used when in place, offered when relevant

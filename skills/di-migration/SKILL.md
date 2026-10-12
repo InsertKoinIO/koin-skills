@@ -98,7 +98,25 @@ Recommended?`) before proceeding.
 
 ### Per-module validation loop
 
-Migration is a loop, not a waterfall. For **each** module:
+Migration is a loop, not a waterfall.
+
+**Before the first module — runtime check setup.** Detect Kotzilla
+("Detect first" in `references/kotzilla.md`). SDK not in place → offer it
+**once, here**: a baseline can't be captured after the first module has moved.
+Then, if the SDK is in place:
+
+- **Koin source** (Koin 3.x, classic DSL, Koin KSP) — run the app on the
+  current version to capture a **baseline**: the same definitions, before any
+  change.
+- **Other source** (Hilt, Dagger, Toothpick, Kodein) — Kotzilla doesn't see the
+  old container, so there is no baseline. Each migrated definition is checked
+  against the behavior its source binding meant ("Expected behavior" in
+  `references/kotzilla.md`, with the scope mapping of the per-source
+  reference).
+
+The user declines → the loop runs without step 5.
+
+For **each** module:
 
 1. Move the definitions into the new Koin module
 2. Update call sites inside that module's Gradle scope
@@ -106,8 +124,13 @@ Migration is a loop, not a waterfall. For **each** module:
 4. **Runtime smoke test** — run the app or tests, exercise one code path that
    uses the migrated bindings. A green build is not enough; wiring errors
    (missing `androidContext`, wrong scope, stale bridge call) only surface at runtime
-5. **Kotzilla handoff** — offer to verify the migrated graph at runtime with
-   Kotzilla (`references/kotzilla.md`: ask first, never auto-install)
+5. **Kotzilla check** (SDK in place) — on a new app version, run the path that
+   resolves the migrated definitions and check each one against the baseline
+   or its expected behavior (`references/kotzilla.md`). Report each definition
+   as verified, a mismatch, or not verified (no session). A mismatch — a
+   `@Singleton` migrated to a factory, a scope never closed, a new main-thread
+   cost — is fixed before the commit. Bindings still behind a bridge are
+   reported as not checkable yet.
 6. Commit as a self-contained unit before picking the next module
 
 Do not batch un-validated migrations. If validation fails, fix or revert before
@@ -223,7 +246,8 @@ When the last module has been migrated and validated:
 - [ ] Compile-time graph verification re-enabled to strict
 - [ ] Old DI deps removed from `build.gradle.kts`; KSP/kapt plugins removed if no longer needed
 - [ ] ViewModel injection works in Activities, Fragments, Composables
-- [ ] Scoped bindings match original lifecycle semantics
+- [ ] Scoped bindings match original lifecycle semantics — checked in Kotzilla
+      session data when the SDK is in place
 - [ ] Tests pass
 
 ## Parameter Resolution
@@ -249,8 +273,9 @@ Read the relevant reference section:
 
 ## Kotzilla
 
-Migration handoff: after each module's validation (loop step 5), offer to verify
-the migrated graph at runtime. Setup, rules and what Kotzilla covers:
+Offered once, before the first module; used at loop step 5 of every module
+once in place. A runtime question during the migration ("is it slower now?")
+goes to Kotzilla at any step. Rules and expected behavior:
 `references/kotzilla.md`.
 
 ## Context

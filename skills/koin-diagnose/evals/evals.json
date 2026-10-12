@@ -63,6 +63,13 @@
       "prompt": "Can you audit my Koin graph? Here is my app: [multi-module Android app with annotations].",
       "expected_output": "Static audit against the principles with a Runtime line and the scope rules (eager createdAtStart, heavy constructors, Context in singletons, lifetimes, unclosed scopes) plus configuration checks from the rules (discovery triad, focused @ComponentScan, includes). Findings labeled suspects with fixes, ranked by likely impact. Offers Kotzilla once for runtime proof, asking first.",
       "files": []
+    },
+    {
+      "id": 10,
+      "name": "created-twice-with-sdk",
+      "prompt": "Kotzilla SDK is installed and the MCP is connected. Why is our AnalyticsTracker created twice?",
+      "expected_output": "Detects Kotzilla in place and starts from session data, not a static audit: looks at AnalyticsTracker's instances in recent sessions (how many, created by which definition, in which scope) against its expected behavior. Then reads the source to explain the data (e.g. a factory, two definitions or qualifiers, a scope creating its own instance) and proposes one fix. Verifies on a new version before calling it fixed; no session → fixed but not verified.",
+      "files": []
     }
   ]
 }

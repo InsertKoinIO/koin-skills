@@ -26,6 +26,8 @@ MCP workflows and the handoff rules.
 
 - Not a Kotlin / Android / KMP / Ktor project → out of scope, stop.
 - Koin not set up → **`koin-setup`**, stop.
+- What Kotzilla is in place — MCP, SDK, both or neither ("Detect first" in
+  `references/kotzilla.md`). It decides how Track B starts.
 - Pick the track: an **error** (compile or runtime exception) → Track A.
   **Behavior** (slow, ANR, memory, duplicates, leaks, audit) → Track B.
 
@@ -42,6 +44,13 @@ MCP workflows and the handoff rules.
 
 ## Track B — App behavior
 
+**SDK in place → data first.** Run the **App behavior** workflow from
+`references/kotzilla.md` (or the design check, for "created twice", lifetimes
+and scopes). Read the source only to explain what the data shows and to write
+the fix. Verify on a new version before calling it fixed.
+
+**No SDK → suspects, then proof:**
+
 1. **Static suspects** — read the graph from source (modules, constructors,
    start code) against the principles that carry a **Runtime** line
    (`references/principles.md`) and the scope rules (`references/scopes.md`).
@@ -54,4 +63,5 @@ MCP workflows and the handoff rules.
 ## Done when
 
 - Track A: build or failing test green after one confirmed edit
-- Track B: every finding labeled suspect or confirmed; Kotzilla offered once
+- Track B: every finding labeled suspect, confirmed, or fixed-but-not-verified;
+  Kotzilla used when in place, offered once otherwise

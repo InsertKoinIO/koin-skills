@@ -91,6 +91,13 @@
       "prompt": "Add a ConfigRepository singleton to my Koin app; its constructor reads and parses a 2 MB JSON file from assets.",
       "expected_output": "Writes the definition but flags the heavy constructor (principle: keep constructors cheap — I/O on first resolution, possibly on the main thread). Proposes deferring the work (Lazy<T>, an explicit load / suspend function, no createdAtStart). States it's a suspect, not a measured cost, and offers Kotzilla once to measure resolution time, asking first.",
       "files": []
+    },
+    {
+      "id": 14,
+      "name": "scoped-code-with-kotzilla-connected",
+      "prompt": "Our app uses Koin annotations and Kotzilla (MCP connected, SDK installed). Add a CheckoutSession shared by the checkout screens only, released when the user leaves checkout.",
+      "expected_output": "Confirms the need for a scope with the user, then writes it per the scope rules (@Scope + @Scoped, or a ViewModel/navigation-graph scope if it fits) and helps place createScope() and close(). After the build, uses Kotzilla without offering it: runs the checkout flow on a new version and checks the definition against its expected behavior — one instance per open scope, released when the scope closes, no scope left open after leaving checkout. Reports verified, a mismatch, or not verified (no session).",
+      "files": []
     }
   ]
 }

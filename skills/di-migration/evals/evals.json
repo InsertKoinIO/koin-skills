@@ -61,7 +61,28 @@
       "id": 9,
       "name": "hilt-progressive-large-app",
       "prompt": "We have a 40-module Android app on Hilt. We want to move to Koin without a big-bang rewrite. Where do we start?",
-      "expected_output": "Progressive migration, never in place: Koin set up alongside Hilt first (koin-setup), Hilt keeps running. Ranks candidate modules leaf-first / smallest-first (few bindings, no dependants, simple binding types) and proposes the top 1–3 in a table before writing code. Bridges for bindings still in Hilt: koin-dagger-bridge or a co-located @Singleton fun bridge in the consumer's @Module. Per-module loop: move definitions, update call sites, compile, run a smoke test, offer Kotzilla to verify the migrated graph (ask first), commit — then stop and ask the user before the next module. Annotations output (Hilt source).",
+      "expected_output": "Progressive migration, never in place: Koin set up alongside Hilt first (koin-setup), Hilt keeps running. Ranks candidate modules leaf-first / smallest-first (few bindings, no dependants, simple binding types) and proposes the top 1–3 in a table before writing code. Bridges for bindings still in Hilt: koin-dagger-bridge or a co-located @Singleton fun bridge in the consumer's @Module. Before the first module: detects whether Kotzilla is in place and, if not, offers it once (ask first, never auto-install) — not after every module. Per-module loop: move definitions, update call sites, compile, run a smoke test, Kotzilla check if accepted, commit — then stop and ask the user before the next module. Annotations output (Hilt source).",
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "hilt-migration-kotzilla-catches-lifetime",
+      "prompt": "We're migrating our Hilt app to Koin module by module. Kotzilla is set up (MCP connected, kotzilla.json in :app). Next target is :feature:cart, which has a @Singleton CartCache and an unscoped CartPriceFormatter. Migrate it.",
+      "expected_output": "Detects Kotzilla in place and uses it without offering it. No baseline for a Hilt source: checks each migrated definition against the behavior its Hilt binding meant (expected behavior table + Hilt scope mapping): CartCache @Singleton → one instance per process; CartPriceFormatter unscoped → factory, a new instance per resolution is expected. Bumps the app version, runs the cart path, confirms the session arrived on the version the SDK reports, then reports each definition as verified, a mismatch or not verified. If CartCache shows several instances (e.g. migrated as @Factory), it's a mismatch fixed before the commit. Any binding still behind a bridge is reported as not checkable yet. Then commits and asks before the next module.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "koin3-upgrade-with-baseline",
+      "prompt": "Upgrade our Android app from Koin 3.5 (classic DSL) to Koin 4 with the Compiler Plugin. We have the Kotzilla SDK installed and the MCP connected.",
+      "expected_output": "Koin source with Kotzilla in place: before the first module, runs the app on the current version to capture a baseline (same definitions, before any change), without offering Kotzilla. Progressive, module by module, Safe DSL output (classic DSL source). After each module: new app version, run the path, compare instance counts, lifetimes and resolution times per definition with the baseline (same device and build type). States that one local run shows lifetimes and instance counts, not timing trends. No session → reports not verified, never inferred from the code.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "runtime-question-mid-migration",
+      "prompt": "We just moved :feature:search from Dagger to Koin and it builds. Is search slower to open now?",
+      "expected_output": "Doesn't answer from source code. Routes the runtime question to Kotzilla even though it's not the loop's handoff step: if the SDK is in place, compares the search screen on the new version with the previous one (or checks the migrated definitions against their expected behavior); if not, offers it once, asking before installing. Static reading may name suspects (eager creation, heavy constructors, a bridge call on the main thread), labeled as suspects. Says a single local run can't show a timing trend.",
       "files": []
     }
   ]

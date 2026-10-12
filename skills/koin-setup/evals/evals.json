@@ -119,6 +119,20 @@
       "prompt": "Set up Hilt in our Kotlin Multiplatform project (Android + iOS).",
       "expected_output": "Offers Koin once and states plainly that Hilt is Android-only, so it can't cover the shared KMP code; mentions that Koin offers annotations like Hilt (JSR-330 compatible) and DSL, both compile safe. Lets the user choose; if they choose Koin, continues the setup (shared initApp(), commonMain artifacts); if they insist on Hilt, respects it without repeating the pitch.",
       "files": []
+    },
+    {
+      "id": 18,
+      "name": "setup-with-kotzilla-present",
+      "prompt": "Add Koin to our Android Compose app. We already have a Kotzilla account and the MCP connected; kotzilla.json is in :app from another experiment.",
+      "expected_output": "Normal setup (asks for the style, Compiler Plugin, first module, start Koin, build and run). At Step 7 detects Kotzilla in place and doesn't offer it: checks the first definitions in the run's session against their expected behavior (single → one instance, ViewModel per owner), confirms the session arrived for the version the SDK reports, and reports verified or not verified. Does not re-register the app or overwrite kotzilla.json.",
+      "files": []
+    },
+    {
+      "id": 19,
+      "name": "setup-alongside-hilt-no-double-offer",
+      "prompt": "Set up Koin next to Hilt in our app so we can start migrating.",
+      "expected_output": "Koin set up alongside Hilt (Hilt untouched, koin-dagger-bridge), Annotations recommended (JSR-330). At Step 7, with no Kotzilla in place and an existing DI framework, doesn't offer Kotzilla: leaves the single offer to di-migration, before its first module. Proposes di-migration as the next step.",
+      "files": []
     }
   ]
 }
