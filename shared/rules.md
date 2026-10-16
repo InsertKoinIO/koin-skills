@@ -245,3 +245,28 @@ tools for a concrete workflow (`references/kotzilla.md`).
 
 **Prefer MCP output over these reference files when they disagree** — the MCP
 tracks the latest releases; references are a snapshot.
+
+## 10. Small changes in one step, large ones step by step
+
+**Small** — one Gradle module or one feature, about five definitions or fewer,
+no custom scope, multibinding or Worker, call sites inside that unit: do it in
+one step, then verify.
+
+**Larger** — a migration of several modules or features, a setup across
+Gradle modules, a restructuring (splitting modules, adding scopes, changing
+style): split it into steps, each one **safe on its own**:
+
+- **Verifiable alone** — it builds, and the path it touches runs
+- **The project works between steps** — the old wiring keeps running until its
+  replacement is verified (in a migration: alongside the old container, with a
+  bridge for what still crosses it)
+- **Revertible** — one self-contained commit
+- **Small** by the measure above — in a migration, rank candidates with
+  `di-migration`'s "Where to start" criteria and take the top one
+
+The rhythm: plan the steps (smallest and safest first) and get the user's OK
+on the plan and the first step. Each step: change → build → run the path →
+report what changed, what's verified or not (and why), and the next step →
+stop for the user's OK. Pre-approved ("do it all"): still one step at a time,
+each verified and reported, stopping at the first failure — never stack
+unverified steps.

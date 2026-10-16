@@ -66,7 +66,9 @@ in a singleton, a dependency through `parametersOf`…) → don't write it yet:
 
 ## Step 2 — Place it in a module
 
-The feature's module, placed and wired per `rules.md` §5 and §7.
+The feature's module, placed and wired per `rules.md` §5 and §7. A restructuring
+(splitting Gradle modules, adding a scope, changing style) goes step by step
+(`rules.md` §10).
 
 ## Step 3 — Inject at the entry point
 

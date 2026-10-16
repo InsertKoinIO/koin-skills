@@ -136,6 +136,11 @@ For **each** module:
    reported as not checkable yet.
 6. Commit as a self-contained unit before picking the next module
 
+The loop is `references/rules.md` §10 applied to migration: a small project
+(one Gradle module, about five bindings) migrates in one verified step; a
+single-module app with more is split by feature (a screen's ViewModel and what
+it needs), the rest staying in the old container.
+
 Do not batch un-validated migrations. If validation fails, fix or revert before
 touching anything else.
 

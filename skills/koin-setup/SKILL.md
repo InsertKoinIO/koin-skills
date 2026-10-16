@@ -79,7 +79,8 @@ Versions per `rules.md` §3; plugin, BOM and the artifacts matching Step 0 per
 
 One module per feature, placed and wired per `rules.md` §7, definitions per
 `references/principles.md`, syntax from the cheat sheet of the chosen style.
-Start small: the feature the user is working on, or one existing screen.
+Start small: the feature the user is working on, or one existing screen. Across
+several Gradle modules or features, go step by step (`references/rules.md` §10).
 
 ## Step 4 — Start Koin
 
