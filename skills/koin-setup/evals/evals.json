@@ -133,6 +133,203 @@
       "prompt": "Set up Koin next to Hilt in our app so we can start migrating.",
       "expected_output": "Koin set up alongside Hilt (Hilt untouched, koin-dagger-bridge), Annotations recommended (JSR-330). At Step 7, with no Kotzilla in place and an existing DI framework, doesn't offer Kotzilla: leaves the single offer to di-migration, before its first module. Proposes di-migration as the next step.",
       "files": []
+    },
+    {
+      "id": 20,
+      "name": "real-jetnews-add-di",
+      "project": "jetnews-manual-di",
+      "tags": [
+        "setup-real",
+        "compile-safety",
+        "compose-samples"
+      ],
+      "prompt": "Add dependency injection to this app.",
+      "expected_output": "Detects the hand-wired AppContainer, asks the style, recommends the Compiler Plugin without imposing it.",
+      "expectations": [
+        "Detects that the app wires its dependencies by hand through AppContainer / AppContainerImpl and plans to replace it with Koin modules, without a big-bang rewrite.",
+        "Asks the user to choose Annotations or DSL before writing code, recommending Annotations for this app.",
+        "Recommends the Koin Compiler Plugin for a compile-safe graph and says it's the recommended default, not a requirement. Never proposes KSP."
+      ],
+      "files": []
+    },
+    {
+      "id": 21,
+      "name": "real-jetnews-setup-annotations",
+      "project": "jetnews-manual-di",
+      "tags": [
+        "setup-real",
+        "compile-safety",
+        "compose-samples"
+      ],
+      "prompt": "Add Koin to this app with annotations and the Koin Compiler Plugin, replacing the AppContainer. Go ahead without asking.",
+      "expected_output": "Compiler Plugin + BOM, annotated definitions, Koin started once, AppContainer replaced.",
+      "expectations": [
+        "Gradle: applies the Koin Compiler Plugin and adds Koin through koin-bom with only the artifacts this Compose app needs; no KSP for Koin, no koin-ksp-compiler.",
+        "The repositories that AppContainer built become @Singleton classes (or @Singleton function builders) with constructor injection, in a @Module @Configuration @ComponentScan module in a .di package.",
+        "Starts Koin once in the Application with @KoinApplication and startKoin<App>, androidContext set; AppContainer is removed or no longer used.",
+        "ViewModels get their repositories through Koin (@KoinViewModel + koinViewModel()), not from the container."
+      ],
+      "checks": [
+        {
+          "file": "gradle/libs.versions.toml",
+          "contains": "insert-koin\\.compiler"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "koin-ksp"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 22,
+      "name": "real-jetnews-setup-without-plugin",
+      "project": "jetnews-manual-di",
+      "tags": [
+        "setup-real",
+        "compile-safety",
+        "compose-samples"
+      ],
+      "prompt": "Add Koin to this app with the DSL, but without the Koin Compiler Plugin: we don't want another compiler plugin in the build. Replace the AppContainer and go ahead without asking.",
+      "expected_output": "Respects the no-plugin choice: DSL without the Compiler Plugin, no KSP.",
+      "expectations": [
+        "Respects the choice: no Koin Compiler Plugin, no annotations, no KSP. May state the trade-off (no compile-time graph check) once, without pushing.",
+        "Writes DSL modules in autowire or classic forms (singleOf / single { … }) that work without the plugin, and starts Koin once in the Application with androidContext.",
+        "Says how to verify without the plugin: build, then run the screens that resolve the definitions. No checkModules / verify() test."
+      ],
+      "checks": [
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "insert-koin\\.compiler"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "koin-ksp"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 23,
+      "name": "real-jetchat-feature-no-di",
+      "project": "jetchat-no-di",
+      "tags": [
+        "setup-real",
+        "compose-samples"
+      ],
+      "skill": [
+        "koin-setup",
+        "koin"
+      ],
+      "prompt": "Add a ProfileRepository that loads the user profile, and use it from the profile screen.",
+      "expected_output": "Does the feature in the app's current hand-wired style and offers Koin once, without setting it up unasked.",
+      "expectations": [
+        "Delivers the feature: a ProfileRepository and its use from the profile screen, wired the way the app works today.",
+        "Offers Koin once, briefly, for wiring classes like this; doesn't add Koin, Gradle changes or modules unasked."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "koin"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 24,
+      "name": "compose-reply-add-koin",
+      "project": "compose-reply",
+      "tags": [
+        "compose-samples",
+        "setup-real"
+      ],
+      "prompt": "Add Koin to this app. Use your recommended style and go ahead without asking.",
+      "expected_output": "Koin set up in a real Compose sample: Compiler Plugin, first modules for the app's real classes, Koin started once.",
+      "expectations": [
+        "States the chosen style (Annotations recommended for a new setup) and recommends the Koin Compiler Plugin; applies it with Koin through koin-bom and only the artifacts this Compose app needs. No KSP for Koin.",
+        "Creates the first Koin module(s) for the app's real dependencies (repositories, data sources, ViewModels the app builds by hand today), with constructor injection, in a .di package.",
+        "Starts Koin once: adds an Application class (the app has none) registered in AndroidManifest.xml, with androidContext set.",
+        "ViewModels come from Koin (@KoinViewModel or viewModel<T>()) and composables get them with koinViewModel(); hand-written ViewModel factories are removed or no longer needed. No KoinComponent in normal classes."
+      ],
+      "checks": [
+        {
+          "file": "gradle/libs.versions.toml",
+          "contains": "insert-koin\\.compiler"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "koin-ksp"
+        },
+        {
+          "file": "app/src/main/AndroidManifest.xml",
+          "contains": "android:name"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 25,
+      "name": "compose-jetsnack-add-koin",
+      "project": "compose-jetsnack",
+      "tags": [
+        "compose-samples",
+        "setup-real"
+      ],
+      "prompt": "Add Koin to this app. Use your recommended style and go ahead without asking.",
+      "expected_output": "Koin set up in a real Compose sample: Compiler Plugin, first modules for the app's real classes, Koin started once.",
+      "expectations": [
+        "States the chosen style (Annotations recommended for a new setup) and recommends the Koin Compiler Plugin; applies it with Koin through koin-bom and only the artifacts this Compose app needs. No KSP for Koin.",
+        "Creates the first Koin module(s) for the app's real dependencies (repositories, data sources, ViewModels the app builds by hand today), with constructor injection, in a .di package.",
+        "Starts Koin once: adds an Application class (the app has none) registered in AndroidManifest.xml, with androidContext set.",
+        "ViewModels come from Koin (@KoinViewModel or viewModel<T>()) and composables get them with koinViewModel(); hand-written ViewModel factories are removed or no longer needed. No KoinComponent in normal classes."
+      ],
+      "checks": [
+        {
+          "file": "gradle/libs.versions.toml",
+          "contains": "insert-koin\\.compiler"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "koin-ksp"
+        },
+        {
+          "file": "app/src/main/AndroidManifest.xml",
+          "contains": "android:name"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 26,
+      "name": "compose-jetsurvey-add-koin",
+      "project": "compose-jetsurvey",
+      "tags": [
+        "compose-samples",
+        "setup-real"
+      ],
+      "prompt": "Add Koin to this app. Use your recommended style and go ahead without asking.",
+      "expected_output": "Koin set up in a real Compose sample: Compiler Plugin, first modules for the app's real classes, Koin started once.",
+      "expectations": [
+        "States the chosen style (Annotations recommended for a new setup) and recommends the Koin Compiler Plugin; applies it with Koin through koin-bom and only the artifacts this Compose app needs. No KSP for Koin.",
+        "Creates the first Koin module(s) for the app's real dependencies (repositories, data sources, ViewModels the app builds by hand today), with constructor injection, in a .di package.",
+        "Starts Koin once: adds an Application class (the app has none) registered in AndroidManifest.xml, with androidContext set.",
+        "ViewModels come from Koin (@KoinViewModel or viewModel<T>()) and composables get them with koinViewModel(); hand-written ViewModel factories are removed or no longer needed. No KoinComponent in normal classes."
+      ],
+      "checks": [
+        {
+          "file": "gradle/libs.versions.toml",
+          "contains": "insert-koin\\.compiler"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "koin-ksp"
+        },
+        {
+          "file": "app/src/main/AndroidManifest.xml",
+          "contains": "android:name"
+        }
+      ],
+      "files": []
     }
   ]
 }

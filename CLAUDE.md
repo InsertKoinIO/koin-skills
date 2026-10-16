@@ -62,6 +62,34 @@ This validates `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json
 `build/plugin/` and builds `build/<skill>-skill.skill` (one per skill) and
 `build/koin-migration-plugin.zip`. Everything under `build/` is git-ignored.
 
+## Evals
+
+`./evals.sh` builds the plugin, generates the suite from `skills/*/evals/evals.json`
+(`scripts/gen_evals.py`) and runs it with `claude plugin eval`: each case in a
+sandboxed Claude Code session that loads only this plugin. Results and the HTML
+report go to `eval-results/<timestamp>/` (git-ignored).
+
+```bash
+./evals.sh --tag vibe -j 5                          # one group: vibe, compile-safety, migration, kotzilla, principles, coexistence, project
+./evals.sh --case 'koin-vibe-*' --keep-temp         # keep the sandbox and its trace.jsonl
+ABLATION=with-without ./evals.sh --tag principles   # also run without the plugin, report the gain
+MODEL=claude-opus-5-5 MAX_COST_USD=10 ./evals.sh --runs 3
+```
+
+**Your own project as a test project** — any git repo works, the sandbox gets a
+clean `git archive` copy (no `build/`, agent files `CLAUDE.md`/`AGENTS.md`/`.claude`
+stripped):
+
+1. Add it to `evals/projects.json`: `repo` relative to `$KOIN_EVAL_PROJECTS`
+   (default `~/workspace`), `ref` (a branch, tag or commit — pin one for stable
+   scores), `path` (sub-directory, or `""`)
+2. Add a case to the skill's `evals/evals.json` with `"project": "<name>"`,
+   `expectations` (one judge check each) and optional `checks`
+   (`{"file", "contains" | "absent"}` or `{"answer_absent"}`)
+3. `./evals.sh --case '<skill>-<case name>'`
+
+A case whose project isn't on disk is skipped, so the suite runs anywhere.
+
 ## Adding a new migration path
 
 1. Create `skills/di-migration/references/<source>-to-koin.md` following the

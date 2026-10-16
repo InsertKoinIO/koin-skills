@@ -66,6 +66,42 @@
     "catalog": "gradle/libs.versions.toml",
     "about": "Android Jetpack Compose, Koin 4.2 + Compiler Plugin, DSL"
   },
+  "jetnews-manual-di": {
+    "repo": "apps/google-android/compose-samples",
+    "ref": "ed8deef5",
+    "path": "JetNews",
+    "about": "JetNews (Compose): dependencies wired by hand through an AppContainer, no DI framework"
+  },
+  "jetchat-no-di": {
+    "repo": "apps/google-android/compose-samples",
+    "ref": "ed8deef5",
+    "path": "Jetchat",
+    "about": "Jetchat (Compose): no DI at all"
+  },
+  "compose-reply": {
+    "repo": "apps/google-android/compose-samples",
+    "ref": "ed8deef5",
+    "path": "Reply",
+    "about": "Reply (Compose, adaptive email app): no DI, one ViewModel, no Application class"
+  },
+  "compose-jetsnack": {
+    "repo": "apps/google-android/compose-samples",
+    "ref": "ed8deef5",
+    "path": "Jetsnack",
+    "about": "Jetsnack (Compose shop): no DI, no Application class"
+  },
+  "compose-jetsurvey": {
+    "repo": "apps/google-android/compose-samples",
+    "ref": "ed8deef5",
+    "path": "Jetsurvey",
+    "about": "Jetsurvey (Compose survey): no DI, four ViewModels with hand-written factories"
+  },
+  "compose-crane": {
+    "repo": "apps/google-android/compose-samples",
+    "ref": "ed8deef5",
+    "path": "Crane",
+    "about": "Crane (Compose travel): Hilt, three ViewModels, a :benchmark module"
+  },
   "_companion_plugins": {
     "android-skills": {
       "repo": "apps/google-android/skills",

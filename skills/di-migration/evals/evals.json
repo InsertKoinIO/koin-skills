@@ -206,6 +206,29 @@
         "Notices Koin runs through KSP (koin-ksp-compiler) and proposes once to move to the Koin Compiler Plugin, which removes Koin's need for KSP; asks before doing it."
       ],
       "files": []
+    },
+    {
+      "id": 19,
+      "name": "compose-crane-hilt-to-koin",
+      "project": "compose-crane",
+      "tags": [
+        "compose-samples",
+        "migration"
+      ],
+      "prompt": "Migrate Crane from Hilt to Koin.",
+      "expected_output": "Inventory of Crane's Hilt graph, progressive plan with Koin alongside Hilt, confirmation asked.",
+      "expectations": [
+        "Inventories Crane's real Hilt setup: @HiltAndroidApp application, @AndroidEntryPoint activities, @HiltViewModel ViewModels, Hilt @Module / @Provides bindings (dispatchers, data sources), with a binding count.",
+        "Plans a progressive migration: Koin set up alongside Hilt with koin-dagger-bridge, Annotations recommended (JSR-330), the Compiler Plugin recommended; a first small target proposed.",
+        "Stops after the plan and asks for confirmation before editing files."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "contains": "hilt"
+        }
+      ],
+      "files": []
     }
   ]
 }

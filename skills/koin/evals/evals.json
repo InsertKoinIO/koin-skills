@@ -523,6 +523,27 @@
         "Doesn't migrate to Koin or add Koin unasked; at most one short mention."
       ],
       "files": []
+    },
+    {
+      "id": 33,
+      "name": "dsl-no-plugin-by-choice-respected",
+      "project": "android-dsl-no-plugin",
+      "tags": [
+        "compile-safety"
+      ],
+      "prompt": "We decided not to use the Koin Compiler Plugin in this project. Add a UserCache singleton that UserRepositoryImpl uses to keep the last loaded users.",
+      "expected_output": "Does the task in the autowire DSL and doesn't push the Compiler Plugin after the team declined it.",
+      "expectations": [
+        "Adds UserCache with constructor injection into UserRepositoryImpl, in the module's autowire DSL (singleOf), without rewriting other lines.",
+        "Respects the team's choice: doesn't propose or argue for the Koin Compiler Plugin, doesn't add it."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "insert-koin\\.compiler"
+        }
+      ],
+      "files": []
     }
   ]
 }
