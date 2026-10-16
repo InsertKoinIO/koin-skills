@@ -53,14 +53,28 @@ Within either style:
   Annotations and Safe DSL (`single<T>()` stays plain). `named("x")` is
   classic DSL only.
 
-## 2. Never use Koin KSP
+## 2. Compiler Plugin recommended, Koin KSP never
 
-Always the Kotlin compiler plugin: `id("io.insert-koin.compiler.plugin")`.
+The Koin Compiler Plugin (`id("io.insert-koin.compiler.plugin")`) is the
+**recommended default**: it makes the graph compile safe (§6). Recommend it in
+every setup and migration, and say what it brings — but it's the user's
+choice, not a requirement. The user declines → Koin DSL without the plugin
+(autowire or classic forms, §1); Annotations need the plugin, so they're off
+the table. Respect the answer for the rest of the conversation.
+
+Whatever the choice, never Koin KSP:
 
 - Never add `com.google.devtools.ksp` for Koin, never `koin-ksp-compiler`.
 - Never pin `io.insert-koin:koin-annotations:2.x` — that's the KSP artifact,
   incompatible with the Compiler Plugin. Let the BOM resolve it.
 - Never `org.koin.ksp.generated.*` imports.
+
+This section and §3 target new setup and migrated code. **Inside an existing
+Koin KSP or Koin 3.x project**, a task matches the project's current Koin
+artifacts, versions and imports — add no new KSP use, change no Koin artifact
+or version. Moving it to the
+Compiler Plugin is a `di-migration`, proposed once per conversation by the
+`koin` skill (Step 0).
 
 ## 3. Versions
 
@@ -157,7 +171,9 @@ in one `modules(...)` call.
 
 The Koin Compiler Plugin checks the graph at build time. Don't write
 `checkModules()` / `verify()` tests — both are on their way to deprecation in
-favor of the Compiler Plugin.
+favor of the Compiler Plugin. Without the plugin (the user's choice, §2) there
+is no compile-time check: verify by building, then running the paths that
+resolve the definitions.
 
 When the build reports a Koin compile-safety error (`[KOIN-…]`), use the
 Kotzilla MCP **Koin errors** workflow (`references/kotzilla.md` — MCP only, no

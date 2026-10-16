@@ -10,9 +10,9 @@ description: >
   or verified at build time, or pastes Hilt / Dagger / Toothpick / Kodein module
   code to convert — "replace Hilt with Koin", "move away from Dagger", "Kodein to
   Koin", "Koin KSP to compiler plugin", "upgrade to Koin 4", "make Koin compile
-  safe". Also load it alongside the build skill when a project on Koin KSP or
-  Koin 3.x upgrades AGP, Kotlin, KSP or Gradle: the Compiler Plugin removes
-  Koin's KSP step. Adding Koin to a project with no DI is koin-setup.
+  safe". When a Koin KSP or Koin 3.x project upgrades AGP, Kotlin, KSP or Gradle,
+  it only proposes the move (the Compiler Plugin removes Koin's KSP step) — no
+  migration starts unasked. Adding Koin to a project with no DI is koin-setup.
 ---
 
 # DI Migration Skill
@@ -188,7 +188,7 @@ Produce:
 **Stop here.** Present the inventory and the plan, then end your turn: no file
 edits until the user confirms the plan, the first target and any Kotlin bump
 (`references/rules.md` §3). Skip the stop only when the user's message already
-confirms them.
+confirms them. Declined → **`koin`** continues the task in the current setup.
 
 ### Step 3 — Gradle Setup
 

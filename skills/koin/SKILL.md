@@ -4,17 +4,16 @@ description: >
   Use for the dependency-injection part of ANY task in a Kotlin, Android, Compose,
   KMP or Ktor project that uses Koin, even when the request never mentions DI or
   Koin: adding a feature, screen, ViewModel, repository, use case, service, worker
-  or Gradle module; adding Navigation 3; writing unit or instrumented tests;
-  refactoring or splitting modules; upgrading AGP, Kotlin or Gradle. Load it
-  alongside other skills (Android, Compose, navigation, testing, build) whenever
-  the change creates, injects or wires a class. Covers definitions, modules,
-  entry points, qualifiers, scopes, Koin tests, and pushing back on DI mistakes:
-  a ViewModel as single, an Activity in a singleton, I/O in a constructor,
-  parametersOf for dependencies. Koin APIs: koinViewModel, koinInject, by inject,
-  @Singleton, @KoinViewModel, @Module, single<T>(), viewModel<T>(). Koin not set
-  up → koin-setup. Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x →
-  di-migration. Crashes, slow startup, instances created twice, memory →
-  koin-diagnose.
+  or Gradle module; adding Navigation 3; writing tests; refactoring or splitting
+  modules; upgrading AGP, Kotlin or Gradle. Load it alongside other skills
+  (navigation, testing, build) whenever the change creates, injects or wires a
+  class. Covers definitions, modules, entry points, scopes, Koin tests, and
+  pushing back on DI mistakes (a ViewModel as single, an Activity in a singleton,
+  I/O in a constructor). Koin APIs: koinViewModel, koinInject, by inject,
+  @KoinViewModel, single<T>(). On Koin KSP, Koin 3.x or without the Compiler
+  Plugin: do the task, propose compile safety once per conversation. Koin not set
+  up → koin-setup. Moving off Hilt, Dagger, Toothpick, Kodein → di-migration.
+  Crashes, slow startup, instances created twice, memory → koin-diagnose.
 ---
 
 # Koin
@@ -33,8 +32,21 @@ docs (lookup order in `references/index.md`).
 
 ## Step 0 — Read the project
 
-- Koin not set up → **`koin-setup`**. Another DI framework, Koin KSP or Koin
-  3.x → **`di-migration`**.
+Read the Gradle files first (version catalog, build scripts): Koin version,
+Koin Compiler Plugin or Koin KSP (`koin-ksp-compiler`), or neither. Don't
+assume the Compiler Plugin — the branches below depend on it.
+
+- Koin not set up → **`koin-setup`**. The user wants to move off another DI
+  framework → **`di-migration`**.
+- **No compile-time graph check** — Koin KSP, Koin 3.x, or Koin 4 without the
+  Compiler Plugin (classic or autowire DSL, `checkModules` / `verify()` tests;
+  without the plugin may be the team's choice, `references/rules.md` §2):
+  do the task in the project's current setup (`references/rules.md` §2), then
+  propose **once per conversation**, whichever skill made the offer (not again
+  after a decline) to make the
+  graph compile safe with the Koin Compiler Plugin (`references/rules.md` §6) —
+  missing definitions caught at build time, no KSP step, no graph tests — as a
+  `di-migration`. Never migrate unasked. The user asks for it → `di-migration`.
 - Note the project's **style** (Annotations, or DSL: Safe / autowire / classic)
   and **conventions** (`.di` packages, module per feature, discovery vs
   explicit `includes`). **Follow them**; don't rewrite existing code into
@@ -63,8 +75,9 @@ The Koin API for that entry point — `references/entry-points.md`.
 
 ## Step 4 — Verify
 
-Build — fix what the compile-time graph check reports (`rules.md` §6). Tests:
-`references/testing.md`.
+Build — fix what the compile-time graph check reports (`rules.md` §6). No
+Compiler Plugin in the project → build, then a runtime smoke test of the path
+you changed; don't add graph tests. Tests: `references/testing.md`.
 
 ## Runtime questions → Kotzilla
 
