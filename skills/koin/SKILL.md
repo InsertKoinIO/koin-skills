@@ -1,23 +1,30 @@
 ---
 name: koin
 description: >
-  Write and edit Koin dependency injection code in a project that already uses
-  Koin 4.x — add or change a repository, use case, ViewModel, service, worker or
-  navigation entry; write a definition or a module (including for a new Gradle
-  module); inject at an Android, Compose, Ktor or iOS entry point; qualifiers,
-  scopes, tests with Koin. Triggers on Koin APIs: koinViewModel, koinInject,
-  by inject, @Singleton, @Factory, @KoinViewModel, @Module, @ComponentScan,
-  single<T>(), viewModel<T>(), includes, @Named, @ViewModelScope, KoinTestRule.
-  NOT for: adding Koin or DI to a project where Koin isn't started → koin-setup.
-  Moving from Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x →
-  di-migration. Debugging, "why is X created twice", memory, performance,
-  slow startup, ANRs, checking how the app behaves → koin-diagnose (Kotzilla).
+  Use for the dependency-injection part of ANY task in a Kotlin, Android, Compose,
+  KMP or Ktor project that uses Koin, even when the request never mentions DI or
+  Koin: adding a feature, screen, ViewModel, repository, use case, service, worker
+  or Gradle module; adding Navigation 3; writing unit or instrumented tests;
+  refactoring or splitting modules; upgrading AGP, Kotlin or Gradle. Load it
+  alongside other skills (Android, Compose, navigation, testing, build) whenever
+  the change creates, injects or wires a class. Covers definitions, modules,
+  entry points, qualifiers, scopes, Koin tests, and pushing back on DI mistakes:
+  a ViewModel as single, an Activity in a singleton, I/O in a constructor,
+  parametersOf for dependencies. Koin APIs: koinViewModel, koinInject, by inject,
+  @Singleton, @KoinViewModel, @Module, single<T>(), viewModel<T>(). Koin not set
+  up → koin-setup. Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x →
+  di-migration. Crashes, slow startup, instances created twice, memory →
+  koin-diagnose.
 ---
 
 # Koin
 
 Write Koin code that fits the project. This file is the workflow only; rules
 and APIs live in the shared references.
+
+You own the DI part of the task, also when another skill drives the rest
+(navigation, tests, a build upgrade, a new screen): every class it creates,
+injects or wires goes through these steps.
 
 **Read `references/rules.md` first** (non-negotiable). `references/index.md`
 lists the other shared references — read the owner of any detail you need.
@@ -40,6 +47,10 @@ Per `references/principles.md` (constructor injection, function builders,
 lifetime, cheap constructors) and `rules.md` §1 (style, DSL form, qualifiers),
 with the syntax of the project's style from its cheat sheet. A scope only when
 `references/scopes.md` says so — check with the user first.
+
+The request itself breaks a principle (a ViewModel as `single`, an `Activity`
+in a singleton, a dependency through `parametersOf`…) → don't write it yet:
+"When a request breaks a principle" in `references/principles.md`.
 
 ## Step 2 — Place it in a module
 

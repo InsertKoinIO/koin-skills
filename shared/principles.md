@@ -5,6 +5,23 @@ them when writing code, and `koin-diagnose` uses them as its static checklist.
 Where a violation has a runtime cost, the **Runtime** line says what Kotzilla
 can measure — a static finding is a suspect, the runtime data is the proof.
 
+## When a request breaks a principle
+
+A user's request is not approval to break a principle. When what they ask for
+would break one — a ViewModel as a `single`, an `Activity` held by a singleton,
+a dependency passed through `parametersOf`, I/O in a constructor, every
+definition `createdAtStart`, `KoinComponent` in a normal layer — **stop before
+writing it**:
+
+1. Name the principle and the concrete cost in their code (leak, lost
+   `onCleared()`, frozen first frame, slower cold start, no compile-time check)
+2. Propose the form that gets them what they actually want (the state survives,
+   the error reaches the screen, the data is ready)
+3. Ask. Write the requested form only after an explicit OK, and flag it in the
+   summary
+
+Rule 2 below is the same pattern for `KoinComponent`.
+
 ## 1. Constructor injection by default, function builder when needed
 
 A class declares what it needs in its constructor. Business and domain classes

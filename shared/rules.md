@@ -2,7 +2,9 @@
 
 These rules apply to every piece of Koin code a skill produces: setup, everyday
 code, migration, diagnosis fixes. Deviate only with explicit user approval, and
-flag it.
+flag it. A request that breaks a rule or a principle is not that approval:
+push back first ("When a request breaks a principle" in
+`references/principles.md`).
 
 Exact imports and syntax: `references/koin-annotations.md` and
 `references/koin-safe-dsl.md`. Don't infer them from memory.

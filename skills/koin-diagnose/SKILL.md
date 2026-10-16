@@ -7,10 +7,12 @@ description: >
   twice, scope leaks. Static checks find suspects; the Kotzilla MCP (+ SDK) gives
   the diagnosis and the proof. Use when the build shows a [KOIN-…] error, a
   stacktrace contains org.koin.core.error (NoDefinitionFoundException,
-  InstanceCreationException…), or the user says "Koin crash", "missing definition",
-  "app is slow to start", "ANR", "freezes on launch", "why is X created twice",
-  "memory leak", "audit my Koin graph", "Koin performance", "profile Koin". Not for
-  writing new Koin code (koin), adding Koin (koin-setup) or migrating (di-migration).
+  InstanceCreationException…), or the user asks how a Koin app behaves at runtime:
+  "Koin crash", "missing definition", "app is slow to start", "ANR", "freezes on
+  launch", "is X created more than once", "why is X created twice", "how long
+  does X take to create", "memory leak", "audit my Koin graph", "Koin
+  performance", "profile Koin", "monitor Koin in production". Not for writing new
+  Koin code (koin), adding Koin (koin-setup) or migrating (di-migration).
 ---
 
 # Koin Diagnose

@@ -6,10 +6,13 @@ description: >
   Safe DSL, and Koin KSP annotations to the Compiler Plugin. Progressive, module by
   module, keeping the old container running until the last binding moves. Use when
   the user wants to migrate, convert or switch DI frameworks, remove Hilt / Dagger /
-  Toothpick / Kodein, upgrade Koin, move off KSP, or pastes Hilt / Dagger / Toothpick
-  / Kodein module code to convert — "replace Hilt with Koin", "move away from
-  Dagger", "Kodein to Koin", "Koin KSP to compiler plugin", "upgrade to Koin 4".
-  Adding Koin to a project with no DI is koin-setup.
+  Toothpick / Kodein, upgrade Koin, move off KSP, make the Koin graph compile safe
+  or verified at build time, or pastes Hilt / Dagger / Toothpick / Kodein module
+  code to convert — "replace Hilt with Koin", "move away from Dagger", "Kodein to
+  Koin", "Koin KSP to compiler plugin", "upgrade to Koin 4", "make Koin compile
+  safe". Also load it alongside the build skill when a project on Koin KSP or
+  Koin 3.x upgrades AGP, Kotlin, KSP or Gradle: the Compiler Plugin removes
+  Koin's KSP step. Adding Koin to a project with no DI is koin-setup.
 ---
 
 # DI Migration Skill
@@ -182,7 +185,10 @@ Produce:
 - Gradle changes and version requirements
 - Bridging plan if bindings will cross containers during migration
 
-Wait for user confirmation before generating code.
+**Stop here.** Present the inventory and the plan, then end your turn: no file
+edits until the user confirms the plan, the first target and any Kotlin bump
+(`references/rules.md` §3). Skip the stop only when the user's message already
+confirms them.
 
 ### Step 3 — Gradle Setup
 
