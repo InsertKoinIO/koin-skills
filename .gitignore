@@ -116,3 +116,6 @@ koin-migration-plugin.zip
 
 # Local skill drafts (not shipped)
 draft/
+
+# Eval run results (./evals.sh)
+eval-results/

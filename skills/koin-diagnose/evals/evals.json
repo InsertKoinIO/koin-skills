@@ -70,6 +70,57 @@
       "prompt": "Kotzilla SDK is installed and the MCP is connected. Why is our AnalyticsTracker created twice?",
       "expected_output": "Detects Kotzilla in place and starts from session data, not a static audit: looks at AnalyticsTracker's instances in recent sessions (how many, created by which definition, in which scope) against its expected behavior. Then reads the source to explain the data (e.g. a factory, two definitions or qualifiers, a scope creating its own instance) and proposes one fix. Verifies on a new version before calling it fixed; no session → fixed but not verified.",
       "files": []
+    },
+    {
+      "id": 11,
+      "name": "kotzilla-slow-startup-real-project",
+      "project": "android-annotations",
+      "tags": [
+        "kotzilla"
+      ],
+      "prompt": "The app feels slow to start. Which Koin definitions are responsible?",
+      "expected_output": "Static suspects from the real project, Kotzilla offered once to measure.",
+      "expectations": [
+        "Reads the real module and start code and lists static suspects, each with file, definition and mechanism (for example androidLogger(Level.DEBUG) in a release build, eager or heavy definitions), labeled as suspects and not as measured facts.",
+        "Offers Kotzilla once to measure startup and resolution times (SDK + MCP), noticing the project already prepares it (the commented monitoring() line and Kotzilla coordinates), and asks before installing anything."
+      ],
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "kotzilla-created-twice-real-project",
+      "project": "android-dsl",
+      "tags": [
+        "kotzilla"
+      ],
+      "prompt": "Is UserPresenter created more than once at runtime?",
+      "expected_output": "Answers from the definition (factory) and offers Kotzilla for runtime proof.",
+      "expectations": [
+        "Finds UserPresenter declared with factoryOf: a new instance on every resolution, so yes by design; explains when that matters.",
+        "Doesn't claim runtime facts from source; offers Kotzilla once to see actual instance creation at runtime."
+      ],
+      "files": []
+    },
+    {
+      "id": 13,
+      "name": "kotzilla-monitor-production-real-project",
+      "project": "android-annotations",
+      "tags": [
+        "kotzilla"
+      ],
+      "skill": [
+        "koin-diagnose",
+        "koin",
+        "koin-setup"
+      ],
+      "prompt": "We want to monitor our Koin graph in production.",
+      "expected_output": "Kotzilla SDK setup per kotzilla.md, using what the project already prepares.",
+      "expectations": [
+        "Recommends Kotzilla (SDK + MCP) for production monitoring of the Koin graph.",
+        "Follows the SDK install steps: Kotzilla Gradle plugin and SDK from the version catalog (the commented coordinates), monitoring() in startKoin, kotzilla.json from the Kotzilla MCP create_app or the console, never invented keys.",
+        "Asks before changing files."
+      ],
+      "files": []
     }
   ]
 }

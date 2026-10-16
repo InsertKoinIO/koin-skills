@@ -84,6 +84,128 @@
       "prompt": "We just moved :feature:search from Dagger to Koin and it builds. Is search slower to open now?",
       "expected_output": "Doesn't answer from source code. Routes the runtime question to Kotzilla even though it's not the loop's handoff step: if the SDK is in place, compares the search screen on the new version with the previous one (or checks the migrated definitions against their expected behavior); if not, offers it once, asking before installing. Static reading may name suspects (eager creation, heavy constructors, a bridge call on the main thread), labeled as suspects. Says a single local run can't show a timing trend.",
       "files": []
+    },
+    {
+      "id": 13,
+      "name": "ksp-to-compiler-real-project-plan",
+      "project": "android-annotations-ksp",
+      "tags": [
+        "compile-safety"
+      ],
+      "prompt": "Move this project from Koin KSP to the Koin Compiler Plugin.",
+      "expected_output": "Inventory, Kotlin bump flagged, KSP-to-plugin plan, confirmation asked.",
+      "expectations": [
+        "Inventories the real setup: koin-annotations and koin-ksp-compiler 2.3.2-Beta1 through KSP, the KOIN_CONFIG_CHECK ksp arg, Koin 4.1.1, Kotlin 2.2.21.",
+        "Flags that Kotlin 2.2.21 is below the Compiler Plugin's minimum, lists what the bump moves (KSP version, AGP or Compose compiler as relevant) and asks before bumping.",
+        "Plan: remove the KSP plugin (only Koin uses it), ksp(koin-ksp-compiler) and the ksp { } block; add the Koin Compiler Plugin; Koin through the BOM; annotated classes unchanged; the generated-code imports and KOIN_CONFIG_CHECK go away.",
+        "Presents the plan and waits for confirmation before editing, or edits only the Gradle files it listed."
+      ],
+      "files": []
+    },
+    {
+      "id": 14,
+      "name": "ksp-to-compiler-real-project-apply",
+      "project": "android-annotations-ksp",
+      "tags": [
+        "compile-safety"
+      ],
+      "prompt": "Move this project from Koin KSP to the Koin Compiler Plugin. I confirm the plan and the Kotlin bump in advance: apply it without stopping to ask.",
+      "expected_output": "Gradle migrated from KSP to the Compiler Plugin, annotations untouched.",
+      "expectations": [
+        "Edits the Gradle files: KSP plugin, ksp(koin-ksp-compiler) and the ksp { } block removed; Koin Compiler Plugin added; Kotlin raised to the plugin's minimum or later; Koin from the BOM at 4.2 or later.",
+        "Leaves the annotated classes and the @Module classes as they are; removes only KSP-specific code such as generated-code imports.",
+        "Says how to verify (build, then run the app) since it can't build here."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "ksp\\(libs\\.koin"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "absent": "koin-ksp-compiler"
+        },
+        {
+          "file": "gradle/libs.versions.toml",
+          "contains": "insert-koin\\.compiler"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 15,
+      "name": "dsl-make-compile-safe-real-project",
+      "project": "android-dsl-no-plugin",
+      "tags": [
+        "compile-safety"
+      ],
+      "prompt": "Make our Koin setup compile safe.",
+      "expected_output": "Classic/autowire DSL to Safe DSL with the Compiler Plugin, keeping the DSL style.",
+      "expectations": [
+        "Chooses the DSL to Safe DSL path and keeps the DSL style (no conversion to annotations unasked).",
+        "Gradle: adds the Koin Compiler Plugin, flags the Kotlin 2.2.21 bump and asks before it.",
+        "Converts singleOf / viewModelOf / factoryOf to single<T>() / viewModel<T>() / factory<T>() with the interface binding kept, from org.koin.plugin.module.dsl.",
+        "Removes CheckModulesTest (or says it goes), since the compile-time check replaces checkModules."
+      ],
+      "files": []
+    },
+    {
+      "id": 16,
+      "name": "hilt-nowinandroid-where-to-start",
+      "project": "hilt-nowinandroid",
+      "tags": [
+        "migration"
+      ],
+      "prompt": "We want to migrate Now in Android from Hilt to Koin. Where do we start?",
+      "expected_output": "Inventory of the real Hilt graph, leaf-first ranked candidates, Koin alongside Hilt, confirmation asked.",
+      "expectations": [
+        "Inventories the real Hilt modules and entry points of this repo (core modules, features, @HiltAndroidApp, @AndroidEntryPoint, @HiltViewModel, build-logic convention plugins) with binding counts.",
+        "Ranks real Gradle modules leaf-first / smallest-first and proposes the top 1–3 as the first target.",
+        "Koin set up alongside Hilt, Hilt untouched, with koin-dagger-bridge for bindings that cross containers; Annotations recommended (JSR-330 compatible). Mentions applying the Compiler Plugin through the build-logic convention plugins.",
+        "Offers Kotzilla once, before the first module, for the runtime check of migrated definitions.",
+        "Waits for the user's choice before writing code."
+      ],
+      "files": []
+    },
+    {
+      "id": 17,
+      "name": "metro-kotlinconf-migrate",
+      "project": "metro-kotlinconf",
+      "tags": [
+        "migration",
+        "exploratory"
+      ],
+      "prompt": "Migrate the KotlinConf app client from Metro to Koin.",
+      "expected_output": "Exploratory: Metro isn't a listed source; checks whether the skill still plans a sensible progressive migration.",
+      "expectations": [
+        "Recognizes Metro (@DependencyGraph, @Provides, @Inject, @SingleIn / @ContributesBinding) and says plainly there is no dedicated Metro guide, then maps its concepts to Koin Annotations.",
+        "Plans a progressive migration of the KMP client, leaf-first, Koin alongside Metro, and asks before writing code.",
+        "Notices the backend already uses Koin 4.1.1 and mentions the Koin 4.2 + Compiler Plugin upgrade as a separate step."
+      ],
+      "files": []
+    },
+    {
+      "id": 18,
+      "name": "coexist-agp9-on-koin-ksp",
+      "project": "android-annotations-ksp",
+      "tags": [
+        "coexistence",
+        "compile-safety"
+      ],
+      "with_plugins": [
+        "android-skills"
+      ],
+      "skill": [
+        "koin",
+        "di-migration"
+      ],
+      "prompt": "Upgrade this project to AGP 9.",
+      "expected_output": "AGP 9 upgrade that also catches the Koin KSP setup and proposes the Compiler Plugin.",
+      "expectations": [
+        "Handles the AGP 9 upgrade request (versions, KSP minimum) without breaking the Koin setup.",
+        "Notices Koin runs through KSP (koin-ksp-compiler) and proposes once to move to the Koin Compiler Plugin, which removes Koin's need for KSP; asks before doing it."
+      ],
+      "files": []
     }
   ]
 }

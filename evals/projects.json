@@ -1,0 +1,76 @@
+{
+  "_comment": "Real projects copied into an eval sandbox with `git archive`. repo is relative to $KOIN_EVAL_PROJECTS (default ~/workspace). catalog: the repo's shared version catalog, copied in so the project stands alone.",
+  "android-dsl": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "HEAD",
+    "path": "android",
+    "catalog": "gradle/libs.versions.toml",
+    "about": "Android Views, Koin 4.2 + Compiler Plugin, DSL (mixed classic and Safe DSL)"
+  },
+  "android-annotations": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "HEAD",
+    "path": "android-annotations",
+    "catalog": "gradle/libs.versions.toml",
+    "about": "Android Views, Koin 4.2 + Compiler Plugin, Annotations, @KoinApplication"
+  },
+  "compose-annotations": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "HEAD",
+    "path": "compose-annotations",
+    "catalog": "gradle/libs.versions.toml",
+    "about": "Compose Multiplatform (Android + iOS), :composeApp + :data, Annotations"
+  },
+  "kotlin-dsl": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "HEAD",
+    "path": "kotlin",
+    "catalog": "gradle/libs.versions.toml",
+    "about": "Plain Kotlin JVM app, DSL"
+  },
+  "ktor-annotations": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "HEAD",
+    "path": "ktor-annotations",
+    "catalog": "gradle/libs.versions.toml",
+    "about": "Ktor server, Annotations"
+  },
+  "android-annotations-ksp": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "7f3b8c8",
+    "path": "android-annotations",
+    "about": "Android, Koin 4.1.1 + koin-annotations 2.3.2 with KSP, Kotlin 2.2.21"
+  },
+  "android-dsl-no-plugin": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "7f3b8c8",
+    "path": "android",
+    "about": "Android, Koin 4.1.1 autowire DSL (singleOf/viewModelOf), CheckModulesTest, no Compiler Plugin"
+  },
+  "hilt-nowinandroid": {
+    "repo": "apps/google-android/nowinandroid",
+    "ref": "HEAD",
+    "path": "",
+    "about": "Now in Android: multi-module Hilt app with build-logic convention plugins"
+  },
+  "metro-kotlinconf": {
+    "repo": "apps/jetbrains/kotlinconf-app-origin",
+    "ref": "HEAD",
+    "path": "",
+    "about": "KotlinConf app: KMP client on Metro, Ktor backend on Koin 4.1.1"
+  },
+  "android-compose-dsl": {
+    "repo": "koin-projects/koin-getting-started",
+    "ref": "HEAD",
+    "path": "android-compose",
+    "catalog": "gradle/libs.versions.toml",
+    "about": "Android Jetpack Compose, Koin 4.2 + Compiler Plugin, DSL"
+  },
+  "_companion_plugins": {
+    "android-skills": {
+      "repo": "apps/google-android/skills",
+      "ref": "HEAD",
+      "about": "Google's official Android skills plugin, loaded next to ours"
+    }
+  }
+}

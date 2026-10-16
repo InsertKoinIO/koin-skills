@@ -98,6 +98,431 @@
       "prompt": "Our app uses Koin annotations and Kotzilla (MCP connected, SDK installed). Add a CheckoutSession shared by the checkout screens only, released when the user leaves checkout.",
       "expected_output": "Confirms the need for a scope with the user, then writes it per the scope rules (@Scope + @Scoped, or a ViewModel/navigation-graph scope if it fits) and helps place createScope() and close(). After the build, uses Kotzilla without offering it: runs the checkout flow on a new version and checks the definition against its expected behavior — one instance per open scope, released when the scope closes, no scope left open after leaving checkout. Reports verified, a mismatch, or not verified (no session).",
       "files": []
+    },
+    {
+      "id": 15,
+      "name": "vibe-android-annotations-settings-feature",
+      "project": "android-annotations",
+      "tags": [
+        "vibe"
+      ],
+      "prompt": "Add a Settings feature: a SettingsRepository interface with an implementation that stores a dark-mode flag in SharedPreferences, a SettingsViewModel exposing it, and show the flag in MainActivity.",
+      "expected_output": "Settings feature in the project's Annotations style, discovered by the existing AppModule, ViewModel injected in MainActivity.",
+      "expectations": [
+        "Uses the project's Annotations style: the implementation is a @Singleton class auto-bound to SettingsRepository, SettingsViewModel is @KoinViewModel. Never @Single, and no DSL module is added.",
+        "Constructor injection everywhere: SharedPreferences or Context reach the implementation through a constructor parameter or a @Singleton function builder in a @Module, never through KoinComponent or a global.",
+        "Relies on the existing AppModule (@Module @Configuration @ComponentScan(\"org.koin.sample\")) and startKoin<MainApplication>: no second startKoin, no manual module list.",
+        "MainActivity gets the ViewModel with the Koin Android API (by viewModel())."
+      ],
+      "checks": [
+        {
+          "file": "app/src/main/kotlin/org/koin/sample/MainActivity.kt",
+          "contains": "Settings"
+        },
+        {
+          "file": "app/src/main/kotlin/org/koin/sample/di/AppModule.kt",
+          "absent": "\\bmodule\\s*\\{"
+        },
+        {
+          "answer_absent": "kotzilla"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 16,
+      "name": "vibe-android-dsl-settings-feature",
+      "project": "android-dsl",
+      "tags": [
+        "vibe"
+      ],
+      "prompt": "Add a Settings feature: a SettingsRepository interface with an implementation that stores a dark-mode flag in SharedPreferences, a SettingsViewModel exposing it, and show the flag in MainActivity.",
+      "expected_output": "Settings feature in the project's DSL, new definitions in Safe DSL form, existing lines untouched.",
+      "expectations": [
+        "Stays in the project's DSL: the new definitions go in a Koin module { } (appModule or a new module loaded the same way), no annotations.",
+        "New definitions use Safe DSL forms: single<SettingsRepositoryImpl>() bound to SettingsRepository and viewModel<SettingsViewModel>(), not lambdas like single { X(get()) }. SharedPreferences come from a function builder or a constructor parameter.",
+        "Doesn't rewrite the existing viewModel { UserViewModel(get()) } and single { UserServiceImpl(get()) } lines unasked; at most mentions once that they could move to Safe DSL.",
+        "No KoinComponent in normal classes; MainActivity uses by viewModel()."
+      ],
+      "checks": [
+        {
+          "file": "app/src/main/kotlin/org/koin/sample/di/AppModule.kt",
+          "contains": "UserViewModel\\(get\\(\\)\\)"
+        },
+        {
+          "file": "app/src/main/kotlin/org/koin/sample/di/AppModule.kt",
+          "contains": "(viewModel|single)<Settings"
+        },
+        {
+          "answer_absent": "kotzilla"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 17,
+      "name": "vibe-cmp-new-feature-module",
+      "project": "compose-annotations",
+      "tags": [
+        "vibe"
+      ],
+      "prompt": "Add a new Gradle module :feature:favorites (Kotlin Multiplatform, commonMain) with a FavoritesRepository and a FavoritesViewModel, and show the favorites count on the list screen.",
+      "expected_output": "New KMP Gradle module wired with Koin Annotations and discovered by the app.",
+      "expectations": [
+        "The new Gradle module applies the Koin Compiler Plugin and takes its Koin dependencies from the version catalog, like :data.",
+        "It has one root Koin module in the feature's .di package with @Module @Configuration @ComponentScan(\"<feature package>\"), the focused package passed explicitly.",
+        "FavoritesRepository implementation is @Singleton with constructor injection, FavoritesViewModel is @KoinViewModel; the app depends on the new module and discovers it without a manual include.",
+        "The list screen gets the ViewModel with koinViewModel() as a default parameter of the composable."
+      ],
+      "checks": [
+        {
+          "file": "settings.gradle.kts",
+          "contains": "feature:favorites"
+        },
+        {
+          "answer_absent": "kotzilla"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 18,
+      "name": "vibe-ktor-new-route",
+      "project": "ktor-annotations",
+      "tags": [
+        "vibe"
+      ],
+      "prompt": "Add a GET /users/{name}/greeting route backed by a new GreetingService that uses the existing user service.",
+      "expected_output": "GreetingService as an annotated singleton, route injecting it with the Koin Ktor API.",
+      "expectations": [
+        "GreetingService is a @Singleton class (Annotations, like the project) with the existing service as a constructor parameter, discovered by the existing module.",
+        "The route gets the service with the Koin Ktor API (inject() / get() in the routing), no KoinComponent in GreetingService."
+      ],
+      "files": [],
+      "checks": [
+        {
+          "answer_absent": "kotzilla"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "vibe-kotlin-split-gradle-modules",
+      "project": "kotlin-dsl",
+      "tags": [
+        "vibe"
+      ],
+      "prompt": "Split this app into two Gradle modules: :core (model and repository) and :app (service and main), each with its own Koin module.",
+      "expected_output": "Two Gradle modules, one Koin DSL module each, wired with includes.",
+      "expectations": [
+        "Creates :core and keeps :app, each with its own Koin module in DSL (the project's style), moving the classes without changing behavior.",
+        "The app's start code loads one app module that includes(coreModule) (or loads both explicitly), with Koin started once.",
+        "Applies the Koin Compiler Plugin and Koin dependencies in each Gradle module that declares definitions; new definitions in Safe DSL form."
+      ],
+      "checks": [
+        {
+          "file": "settings.gradle.kts",
+          "contains": ":core"
+        },
+        {
+          "answer_absent": "kotzilla"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 20,
+      "name": "ksp-project-new-definition-proposes-plugin",
+      "project": "android-annotations-ksp",
+      "tags": [
+        "compile-safety"
+      ],
+      "skill": [
+        "koin",
+        "di-migration"
+      ],
+      "prompt": "Add a ProfileRepository with a default implementation that uses the UserRepository.",
+      "expected_output": "Adds the definition in the annotations style and proposes moving from KSP to the Compiler Plugin, without migrating unasked.",
+      "expectations": [
+        "Adds ProfileRepository and a @Singleton default implementation with UserRepository as a constructor parameter, in the project's annotations style (it works under KSP too).",
+        "Notices the project uses Koin KSP (koin-ksp-compiler, Koin 4.1.1) and proposes once to move to the Koin Compiler Plugin, saying why (compile-time graph check, no KSP), and asks before doing it.",
+        "Doesn't change the Gradle setup unasked."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "contains": "ksp\\(libs\\.koin\\.ksp\\)"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 21,
+      "name": "dsl-no-plugin-new-definition-suggests-safety",
+      "project": "android-dsl-no-plugin",
+      "tags": [
+        "compile-safety"
+      ],
+      "skill": [
+        "koin",
+        "di-migration"
+      ],
+      "prompt": "Add a UserCache singleton that UserRepositoryImpl uses to keep the last loaded users.",
+      "expected_output": "Follows the existing autowire DSL and mentions compile safety with the Compiler Plugin once.",
+      "expectations": [
+        "Adds UserCache with constructor injection into UserRepositoryImpl, in the module's existing autowire DSL form (singleOf), without rewriting the other lines.",
+        "Mentions once that the project has no compile-time graph check and that the Koin Compiler Plugin (Safe DSL) would give one and replace CheckModulesTest; proposes the migration and asks, doesn't do it unasked."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "insert-koin\\.compiler"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 22,
+      "name": "principle-activity-in-singleton",
+      "project": "android-annotations",
+      "tags": [
+        "principles"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "UserRepository should show a Toast when loading fails. Pass it the MainActivity so it can show it.",
+      "expected_output": "Refuses to hold the Activity in a singleton and proposes a lifecycle-safe alternative.",
+      "expectations": [
+        "Doesn't make the @Singleton UserRepository hold MainActivity: explains it injects a shorter-lived object into a longer-lived one (Activity leak, stale reference after rotation).",
+        "Proposes a lifecycle-safe alternative: the repository reports the failure (result, exception or Flow) and the ViewModel / Activity shows the Toast; the application context only if a Context is truly needed in the singleton."
+      ],
+      "checks": [
+        {
+          "file": "app/src/main/kotlin/org/koin/sample/repository/UserRepository.kt",
+          "absent": "Activity"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 23,
+      "name": "principle-viewmodel-as-single",
+      "project": "android-dsl",
+      "tags": [
+        "principles"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "Make UserViewModel a single so its state survives when the user leaves the screen.",
+      "expected_output": "Keeps the ViewModel a viewModel definition and moves the long-lived state where it belongs.",
+      "expectations": [
+        "Doesn't declare UserViewModel as single: ViewModels are always viewModel definitions, a singleton ViewModel breaks its lifecycle (onCleared, viewModelScope) and leaks what it holds.",
+        "Moves the state that must outlive the screen into a singleton holder (repository or store) that the ViewModel depends on, or SavedStateHandle for process death, and explains the choice."
+      ],
+      "checks": [
+        {
+          "file": "app/src/main/kotlin/org/koin/sample/di/AppModule.kt",
+          "absent": "single\\s*(<UserViewModel>|\\{\\s*UserViewModel)"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 24,
+      "name": "principle-io-in-constructor",
+      "project": "android-annotations",
+      "tags": [
+        "principles"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "Add a CountryRepository that loads the 3 MB countries.json from assets in its init block, so the data is ready when someone needs it.",
+      "expected_output": "Writes the repository but moves the I/O out of init.",
+      "expectations": [
+        "Flags reading and parsing a 3 MB file in init as a constructor cost: it runs on first resolution, often on the main thread, and can freeze the UI.",
+        "Defers the work: lazy loading, an explicit suspend load() on a background dispatcher, or Lazy<T> injection; no createdAtStart to hide it.",
+        "Still delivers a @Singleton CountryRepository with the context or assets reaching it through the constructor."
+      ],
+      "files": []
+    },
+    {
+      "id": 25,
+      "name": "principle-eager-everything",
+      "project": "android-annotations",
+      "tags": [
+        "principles",
+        "kotzilla"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "To make the app snappier, create all our singletons at startup.",
+      "expected_output": "Pushes back: eager creation moves cost into cold start; proposes measuring first.",
+      "expectations": [
+        "Explains that createdAtStart builds instances inside startKoin in Application.onCreate on the main thread, which adds to cold start; regular singletons are lazy and cost only on first use.",
+        "Doesn't mark every definition createdAtStart; keeps eager creation for what must exist at startup, and proposes deferring the rest (Lazy<T>).",
+        "Proposes measuring before changing, with Kotzilla offered once for startup and resolution times."
+      ],
+      "files": []
+    },
+    {
+      "id": 26,
+      "name": "principle-parameters-are-values",
+      "project": "android-dsl",
+      "tags": [
+        "principles"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "UserPresenter needs the UserService. Pass it with parametersOf when I get the presenter.",
+      "expected_output": "Uses constructor injection from the graph instead of parametersOf for a dependency.",
+      "expectations": [
+        "Explains that parametersOf is for runtime values (an id, a URL), not dependencies, which come from the graph.",
+        "UserPresenter gets UserService as a constructor parameter resolved by its definition (Safe DSL factory<UserPresenter>() or the existing factoryOf), with no parametersOf at the call site."
+      ],
+      "files": []
+    },
+    {
+      "id": 27,
+      "name": "principle-two-implementations",
+      "project": "android-annotations",
+      "tags": [
+        "principles"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "We need a second UserService implementation that caches results. UserPresenter should use the cached one, everything else the real one.",
+      "expected_output": "Distinct types or annotation qualifiers, not raw named strings.",
+      "expectations": [
+        "Prefers distinct types (for example a CachedUserService type the presenter depends on) or, if both must stay UserService, annotation qualifiers: @Named or a custom @Qualifier on the implementation class and on the presenter's constructor parameter.",
+        "No raw named(\"x\") strings, no @Single; both implementations stay @Singleton classes with constructor injection (the cached one may wrap the real one)."
+      ],
+      "files": []
+    },
+    {
+      "id": 28,
+      "name": "principle-unit-test-without-koin",
+      "project": "android-annotations",
+      "tags": [
+        "principles"
+      ],
+      "skill": [
+        "koin",
+        "koin-diagnose"
+      ],
+      "prompt": "Write a unit test for UserPresenter.",
+      "expected_output": "Plain unit test with fakes, no Koin container.",
+      "expectations": [
+        "Writes a plain unit test that constructs UserPresenter directly with a fake or stub dependency: no startKoin, no KoinTest, no KoinTestRule.",
+        "Mentions that the graph is checked at compile time by the Compiler Plugin, so no checkModules / verify() test is needed; Koin in tests only when a test needs the real graph."
+      ],
+      "files": []
+    },
+    {
+      "id": 29,
+      "name": "coexist-nav3-compose",
+      "project": "android-compose-dsl",
+      "tags": [
+        "coexistence"
+      ],
+      "with_plugins": [
+        "android-skills"
+      ],
+      "prompt": "Add Navigation 3 to this app with a Home screen and a Detail screen that takes a user id.",
+      "expected_output": "Navigation 3 wired with Koin, not Hilt, with the Google skills installed too.",
+      "expectations": [
+        "Wires DI with Koin, the project's container: koin-compose-navigation3 entries in a Koin module (navigation<HomeRoute> { … }, navigation<DetailRoute> { … }) or a Koin-friendly entry provider. No Hilt, no hiltViewModel().",
+        "ViewModels come from Koin (viewModel<T>() definitions, koinViewModel() in the composables); the user id reaches the Detail ViewModel as a runtime value (parametersOf or SavedStateHandle), not as a dependency.",
+        "New definitions follow the project's Safe DSL forms."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "hilt"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 30,
+      "name": "coexist-new-feature-compose",
+      "project": "android-compose-dsl",
+      "tags": [
+        "coexistence"
+      ],
+      "with_plugins": [
+        "android-skills"
+      ],
+      "prompt": "Add a Profile screen with a ProfileViewModel and a ProfileRepository.",
+      "expected_output": "Koin Safe DSL feature, not Hilt, with the Google skills installed too.",
+      "expectations": [
+        "Uses Koin like the project: single<ProfileRepositoryImpl>() bound to ProfileRepository and viewModel<ProfileViewModel>() in a Koin module, koinViewModel() in the composable. No Hilt.",
+        "Constructor injection, no KoinComponent."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "hilt"
+        },
+        {
+          "answer_absent": "kotzilla"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 31,
+      "name": "coexist-testing-setup",
+      "project": "android-annotations",
+      "tags": [
+        "coexistence"
+      ],
+      "with_plugins": [
+        "android-skills"
+      ],
+      "prompt": "Set up unit and instrumented tests for this app.",
+      "expected_output": "Test setup that fits a Koin app, not Hilt testing.",
+      "expectations": [
+        "Unit tests build classes directly with fakes, without Koin.",
+        "Instrumented tests that need the graph use Koin's test support (koin-test / koin-android-test, replacing a definition with a fake), not Hilt's test runner or HiltAndroidRule."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "absent": "hilt"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 32,
+      "name": "coexist-hilt-project-stays-hilt",
+      "project": "hilt-nowinandroid",
+      "tags": [
+        "coexistence"
+      ],
+      "with_plugins": [
+        "android-skills"
+      ],
+      "skill": [],
+      "prompt": "Add a feature that exports the user's bookmarks to a JSON file, with a repository and a ViewModel.",
+      "expected_output": "Stays on Hilt in a Hilt project; no Koin push.",
+      "expectations": [
+        "Uses Hilt like the project (@Inject constructors, @HiltViewModel, Hilt modules) and follows its module conventions.",
+        "Doesn't migrate to Koin or add Koin unasked; at most one short mention."
+      ],
+      "files": []
     }
   ]
 }
