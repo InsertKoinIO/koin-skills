@@ -229,6 +229,70 @@
         }
       ],
       "files": []
+    },
+    {
+      "id": 20,
+      "name": "steps-crane-small-one-step",
+      "project": "compose-crane",
+      "tags": [
+        "steps",
+        "migration",
+        "compose-samples"
+      ],
+      "prompt": "Migrate Crane from Hilt to Koin. I approve your plan and any Kotlin bump in advance: go ahead.",
+      "expected_output": "Small project (one module, about five bindings): migrated in one verified step.",
+      "expectations": [
+        "Treats Crane as small (one Gradle module, about five bindings, no custom scope or multibinding) and migrates it in one step, saying why one step is safe here.",
+        "The migration is complete and consistent: Koin definitions for every binding, Koin started in the Application, Hilt entry points and hiltViewModel() replaced, tests' Hilt setup handled or listed.",
+        "Reports the step: what changed, what is verified or not and why (no build here), and the next step."
+      ],
+      "files": []
+    },
+    {
+      "id": 21,
+      "name": "steps-nowinandroid-first-module",
+      "project": "hilt-nowinandroid",
+      "tags": [
+        "steps",
+        "migration"
+      ],
+      "prompt": "Start migrating Now in Android from Hilt to Koin. I approve your plan in advance: do the first module.",
+      "expected_output": "One small leaf module migrated alongside Hilt, then stops.",
+      "expectations": [
+        "Migrates exactly one small, low-risk module (leaf-first ranking), not several.",
+        "The rest of the app keeps running on Hilt: Hilt stays in place, Koin runs alongside it, bindings that still cross containers go through a bridge (koin-dagger-bridge or a bridge definition).",
+        "Reports the step: what changed, what is verified or not and why (no build here), and the next step. Then stops for the user's OK before the next module."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "contains": "hilt"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 22,
+      "name": "steps-nowinandroid-do-it-all",
+      "project": "hilt-nowinandroid",
+      "tags": [
+        "steps",
+        "migration"
+      ],
+      "prompt": "Migrate Now in Android from Hilt to Koin. Do it all, don't stop to ask me.",
+      "expected_output": "Still one step at a time; since nothing can be verified here, stops after the first step instead of stacking unverified ones.",
+      "expectations": [
+        "Doesn't migrate the whole app in one pass: works one module at a time, leaf-first, with Koin alongside Hilt.",
+        "Since it can't build or run here, it doesn't stack unverified steps: it stops after the first module (or the first few only if it explains they're independent and verified otherwise), says why, and lists the next steps.",
+        "Reports the step: what changed, what is verified or not and why (no build here), and the next step."
+      ],
+      "checks": [
+        {
+          "file": "app/build.gradle.kts",
+          "contains": "hilt"
+        }
+      ],
+      "files": []
     }
   ]
 }

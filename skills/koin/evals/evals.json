@@ -544,6 +544,22 @@
         }
       ],
       "files": []
+    },
+    {
+      "id": 34,
+      "name": "steps-cmp-split-into-modules",
+      "project": "compose-annotations",
+      "tags": [
+        "steps"
+      ],
+      "prompt": "Split this app into Gradle modules: :data, :feature:list and :feature:detail, each with its own Koin module.",
+      "expected_output": "Plans the split as safe steps and gets the OK on the plan and the first step.",
+      "expectations": [
+        "Presents the split as ordered steps (smallest and safest first), each one leaving the app building and running.",
+        "Gets the user's OK on the plan and the first step before restructuring, or does only the first step and stops for the OK.",
+        "Each new Gradle module gets its own Koin module in its .di package with @Module @Configuration @ComponentScan(\"<its package>\"), Compiler Plugin applied, discovered by the app."
+      ],
+      "files": []
     }
   ]
 }
