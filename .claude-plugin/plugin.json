@@ -1,7 +1,7 @@
 {
   "name": "koin-migration",
   "version": "1.0.0",
-  "description": "Automate Dependency Injection (DI) framework migration to Koin 4.x with the Koin Compiler Plugin. Supports Hilt, Dagger, Toothpick, Kodein, Koin DSL upgrades, and KSP-to-Compiler-Plugin migration.",
+  "description": "Official Koin skills: set up Koin, write Koin code, migrate from Hilt, Dagger, Toothpick, Kodein or older Koin, and diagnose Koin apps with Kotzilla. Koin 4.x with the Koin Compiler Plugin — Annotations (JSR-330 compatible) or DSL, compile safe in both, Kotlin Multiplatform.",
   "author": {
     "name": "Kotzilla"
   },

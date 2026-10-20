@@ -1,6 +1,6 @@
 # Koin KSP Annotations → Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-annotations.md`](koin-annotations.md) → "Setup" for the standard Gradle block, JSR-330 support note, and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Why Migrate](#why-migrate)
@@ -41,7 +41,7 @@ Projects using `koin-annotations` + `koin-ksp-compiler` (KSP-based) benefit from
 |------------------------------|--------------------------------------------------|--------------------------------------------------|
 | Gradle plugin                | `com.google.devtools.ksp`                        | `io.insert-koin.compiler.plugin`                 |
 | Compiler dependency          | `ksp("io.insert-koin:koin-ksp-compiler")`        | Included via plugin                              |
-| Annotations library          | `io.insert-koin:koin-annotations:1.x/2.x`       | `io.insert-koin:koin-annotations:4.2.x`         |
+| Annotations library          | `io.insert-koin:koin-annotations:1.x/2.x`       | `io.insert-koin:koin-annotations` via `koin-bom` |
 | Generated files              | `build/generated/ksp/*.kt` files                 | **None** — inline transformation                 |
 | DSL style                    | `singleOf(::MyClass)`                            | `single<MyClass>()`                              |
 | Module import                | `import org.koin.ksp.generated.module`            | No special import needed                         |
@@ -73,7 +73,7 @@ Projects using `koin-annotations` + `koin-ksp-compiler` (KSP-based) benefit from
    # Check your Kotlin version in gradle.properties or build.gradle.kts
    grep -r "kotlin" gradle.properties | grep version
    ```
-2. **Koin version**: Must upgrade to 4.2.1 or higher
+2. **Koin version**: Must upgrade to the version in `references/rules.md` §3
 3. If you cannot upgrade Kotlin to 2.3.x, **stay on KSP** — the compiler plugin requires K2
 
 ### Step 2 — Update Gradle Configuration
@@ -96,18 +96,9 @@ dependencies {
 //     arg("KOIN_DEFAULT_MODULE", "false")
 //     arg("KOIN_CONFIG_CHECK", "true")
 // }
-
-// ADD these:
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-    // Keep all other koin-android, koin-compose dependencies — update to 4.2.1
-}
 ```
+
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 ### Step 3 — Update Annotation Imports
 
@@ -146,8 +137,9 @@ With qualifiers:
 // BEFORE
 singleOf(::MyService) { named("production") }
 
-// AFTER
-single<MyService>(named("production"))
+// AFTER — qualifier on the class, plain reified definition
+@Named("production") class MyService(…)
+single<MyService>()
 ```
 
 With options:
@@ -159,8 +151,8 @@ singleOf(::MyService) {
     createdAtStart()
 }
 
-// AFTER
-single<MyService>(named("production")).withOptions {
+// AFTER — @Named("production") on the class
+single<MyService>().withOptions {
     bind<Service>()
     createdAtStart()
 }
@@ -225,18 +217,7 @@ ksp {
 
 ### JVM/Android — After (Compiler Plugin)
 
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 ### KMP — Before (KSP) — Complex!
 
@@ -269,17 +250,7 @@ tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMet
 
 ### KMP — After (Compiler Plugin) — Simple!
 
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    commonMainImplementation("io.insert-koin:koin-core:4.2.1")
-    commonMainImplementation("io.insert-koin:koin-annotations:4.2.1")
-    // No per-target configuration needed!
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 ## Annotation Changes
 
@@ -321,16 +292,14 @@ class AppModule
 
 ### Import path change: @KoinViewModel
 
+Only the import changes — the class, `@InjectedParam` and the call sites
+(`koinViewModel { parametersOf(…) }`, `by viewModel { parametersOf(…) }`) stay the same:
+
 ```kotlin
 // BEFORE (KSP)
 import org.koin.android.annotation.KoinViewModel
-
 // AFTER (Compiler Plugin)
 import org.koin.core.annotation.KoinViewModel
-
-// Usage is identical:
-@KoinViewModel
-class MainViewModel(private val repo: UserRepository) : ViewModel()
 ```
 
 ### Import path change: generated .module
@@ -353,15 +322,7 @@ startKoin {
 
 The compiler plugin transforms reified type parameter calls into constructor resolution:
 
-| KSP Style (Before)                             | Compiler Plugin Style (After)               |
-|-------------------------------------------------|----------------------------------------------|
-| `singleOf(::MyService)`                        | `single<MyService>()`                        |
-| `factoryOf(::MyRepo)`                          | `factory<MyRepo>()`                          |
-| `viewModelOf(::MyVM)`                          | `viewModel<MyVM>()`                          |
-| `scopedOf(::MyScoped)`                         | `scoped<MyScoped>()`                         |
-| `workerOf(::MyWorker)`                         | `worker<MyWorker>()`                         |
-| `singleOf(::Impl) { bind<Interface>() }`       | `single<Impl>().withOptions { bind<Interface>() }` |
-| `singleOf(::Impl) { named("x") }`             | `single<Impl>(named("x"))`                  |
+Same mapping as `references/dsl-to-compiler.md` → "Core DSL Mapping" (owner of the classic / autowire → Safe DSL table).
 
 **Note**: The old `singleOf(::Class)` syntax still works if you prefer not to change DSL code immediately. The compiler plugin supports both styles.
 
@@ -391,31 +352,7 @@ startKoin {
 
 ## ViewModel Changes
 
-```kotlin
-// BEFORE (KSP)
-import org.koin.android.annotation.KoinViewModel
-
-@KoinViewModel
-class DetailViewModel(
-    private val repo: ItemRepository,
-    @InjectedParam private val itemId: String
-) : ViewModel()
-
-// AFTER (Compiler Plugin) — only import changes
-import org.koin.core.annotation.KoinViewModel
-
-@KoinViewModel
-class DetailViewModel(
-    private val repo: ItemRepository,
-    @InjectedParam private val itemId: String
-) : ViewModel()
-
-// Usage in Compose — identical:
-val viewModel = koinViewModel<DetailViewModel> { parametersOf("item_123") }
-
-// Usage in Fragment — identical:
-private val viewModel: DetailViewModel by viewModel { parametersOf("item_123") }
-```
+Only the `@KoinViewModel` import changes — see "Import path change: @KoinViewModel" above.
 
 ## New Features
 
@@ -450,9 +387,7 @@ object MyApp
 
 // Modules are auto-injected — no manual module list
 fun main() {
-    startKoin<MyApp> {
-        printLogger()
-    }
+    startKoin<MyApp>()
 }
 ```
 
@@ -533,15 +468,7 @@ dependencies {
 
 ### After (Compiler Plugin): Just apply the plugin
 
-```kotlin
-// feature/build.gradle.kts
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-dependencies {
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 ### Cross-Module Discovery with @Configuration
 
@@ -643,32 +570,11 @@ import org.koin.ksp.generated.module
 
 ### 4. Keeping KSP plugin when not needed
 
-```kotlin
-// WRONG — both plugins, conflicts possible
-plugins {
-    id("com.google.devtools.ksp") version "..."     // Remove if only Koin used it
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-// RIGHT — only keep KSP if OTHER processors need it (Room, Moshi, etc.)
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-```
+Remove `com.google.devtools.ksp` if only Koin used it — keeping both plugins can conflict. Keep KSP only if **other** processors need it (Room, Moshi…).
 
 ### 5. Version mismatch
 
-```kotlin
-// WRONG — old annotations with new plugin
-dependencies {
-    implementation("io.insert-koin:koin-annotations:1.4.0")  // Old!
-}
-
-// RIGHT — use matching versions
-dependencies {
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-}
-```
+Don't keep an old `koin-annotations` version (1.x / 2.x — the KSP artifacts) next to the Compiler Plugin. Let the `koin-bom` resolve `koin-annotations` with the rest of Koin (`references/rules.md` §2).
 
 ### 6. KMP per-target KSP declarations left behind
 
@@ -689,7 +595,7 @@ dependencies {
 ## Verification Checklist
 
 - [ ] Kotlin upgraded to 2.3.x+ (K2)
-- [ ] Koin upgraded to 4.2.1+
+- [ ] Koin upgraded per `references/rules.md` §3
 - [ ] `com.google.devtools.ksp` plugin removed (or only kept for non-Koin processors)
 - [ ] `ksp("io.insert-koin:koin-ksp-compiler")` dependency removed
 - [ ] `ksp { }` block removed or cleaned of Koin-specific args
@@ -701,6 +607,6 @@ dependencies {
 - [ ] KSP source set hacks removed (KMP projects)
 - [ ] `build/generated/ksp/` directory deleted
 - [ ] Clean build succeeds: `./gradlew clean build`
-- [ ] `checkModules()` passes in tests (optional safety net)
+- [ ] No `checkModules()` / `verify()` tests left — compile-time verification replaces them
 - [ ] ViewModel injection verified in Activities, Fragments, Composables
 - [ ] Scoped bindings verified

@@ -10,7 +10,7 @@ Maintainer checklist for cutting a new release of the `koin-migration` plugin.
 - [ ] Marketplace install flow still works from a fresh Claude Code session:
       `/plugin marketplace add InsertKoinIO/koin-migration` then
       `/plugin install koin-migration@koin-migration`
-- [ ] At least one eval from `skills/di-migration/evals/evals.json` runs end-to-end on a real sample
+- [ ] At least one `di-migration` eval (private evals repo) runs end-to-end on a real sample
 - [ ] No uncommitted changes (`git status` clean)
 
 ## Version bump

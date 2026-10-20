@@ -8,7 +8,7 @@ collect, store, or transmit user data**.
 
 ## What the plugin does
 
-- Provides `SKILL.md`, `references/*.md`, and `evals/evals.json` as text files
+- Provides `SKILL.md` and `references/*.md` as text files
 - These files are read by Claude Code locally when you invoke the skill
 - No telemetry, analytics, or network calls are performed by the plugin
 - No user code, file contents, or identifying information is sent anywhere

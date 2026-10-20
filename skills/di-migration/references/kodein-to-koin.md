@@ -1,6 +1,6 @@
 # Kodein → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-safe-dsl.md`](koin-safe-dsl.md) → "Setup" for the standard Gradle block and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)
@@ -22,7 +22,7 @@
 
 Do **not** rewrite existing Kodein modules in place. Instead:
 
-1. Create a new empty Koin module (e.g. `appKoinModule`) and call `startKoin { modules(appKoinModule) }`
+1. Set Koin up **alongside** the existing container — the `koin-setup` skill (Gradle, style, start)
 2. Keep the existing Kodein `DI` container running for everything not yet migrated
 3. Move definitions from Kodein modules into the Koin module **one feature at a time**
 4. At each call site, swap `by instance()` / `direct.instance()` for `by inject()` / `get()` only for the bindings already moved
@@ -61,9 +61,9 @@ Mappings target **Safe DSL + Koin Compiler Plugin** (no annotations for Kodein):
 | `multiton<P, T>()` (cached factory)  | No direct equivalent — a `single<Map<P, T>>` cache, or `single<T>` per known key |
 | `bindings.set { add(...) }` (set bindings) | Manual `List<T>` collected inside a `single<List<T>>` |
 | `subDI(parentDI) { ... }`            | Multiple modules in `startKoin { modules(parent, child) }` |
-| `DIAware` interface on a class       | `KoinComponent` interface + `by inject()`             |
+| `DIAware` interface on a class       | Constructor injection (see Retrieval below)          |
 | `androidXModule(app)`                | `androidContext(this@App)` in `startKoin { }`         |
-| `closestDI()` from Android `Context` | `getKoin()` (Android), `KoinContext { }` (Compose)    |
+| `closestDI()` from Android `Context` | `getKoin()` (Android), `koinInject()` (Compose)       |
 
 ---
 
@@ -74,19 +74,9 @@ Mappings target **Safe DSL + Koin Compiler Plugin** (no annotations for Kodein):
 implementation("org.kodein.di:kodein-di:<version>")
 implementation("org.kodein.di:kodein-di-framework-android-x:<version>")
 implementation("org.kodein.di:kodein-di-framework-compose:<version>")
-
-// ADD
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")             // Android
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")    // Compose
-}
 ```
+
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ---
@@ -127,21 +117,10 @@ startKoin {
 }
 ```
 
-**Safe DSL forms** (preferred — compiler resolves constructor params):
-
-- `single<T>()` — no lambda, reified. Compiler resolves every ctor param.
-- `single { create(::T) }` — explicit factory-function reference, equivalent to
-  the above but more explicit. Use when you want the `::T` reference to be
-  visible (e.g. to show intent in a code review).
-- `single<Impl>().bind<I>()` — bind an impl to an interface.
-
-**Classic DSL lambda** (`single { T(get()) }`) is a fallback **only** for
-third-party types that can't be reached via reified generics (e.g. `Retrofit.Builder()`,
-`Room.databaseBuilder()`). Do not use it for classes you own.
-
-Classic DSL lambdas (`single { Retrofit.Builder()... }`) remain a fallback for
-third-party types that can't be reached via reified generics. Do not emit
-`@Singleton` / `@Factory` / `@Module` class annotations in Kodein migration output.
+Kodein migrations produce **Safe DSL** — never `@Singleton` / `@Factory` /
+`@Module` annotations. Definition forms (reified `single<T>()`, `.bind<I>()`,
+function builders for third-party types, lambdas only for custom expressions):
+`references/rules.md` §1 and `references/koin-safe-dsl.md`.
 
 ---
 
@@ -168,56 +147,10 @@ bind<HttpClient>(tag = "public") with singleton { HttpClient(publicConfig) }
 val auth: HttpClient by instance(tag = "auth")
 ```
 
-**Koin Safe DSL** uses `named("...")` (string) or a custom qualifier object
-(type-safe) at definition and retrieval sites:
-
-```kotlin
-val networkModule = module {
-    single<HttpClient>(named("auth"))   { HttpClient(get(named("authConfig"))) }
-    single<HttpClient>(named("public")) { HttpClient(get(named("publicConfig"))) }
-
-    single<Service> { Service(client = get(named("auth"))) }
-}
-```
-
-Kodein's `tag = "x"` maps to Koin's `@Named("x")`. In Safe DSL, the qualifier
-lives on the **class declaration** (or a ctor parameter for the consumer side)
-— not as an argument to `single<T>()`. The Compiler Plugin reads `@Named` off
-the class/param.
-
-```kotlin
-// Qualifier on the class itself
-@Named("auth")
-class AuthHttpClient(val cfg: Config) : HttpClient
-
-@Named("public")
-class PublicHttpClient(val cfg: Config) : HttpClient
-
-// Qualifier on a ctor parameter — resolves the matching qualified dependency
-class Service(@Named("auth") val client: HttpClient)
-
-// Module — plain reified single<T>(), no qualifier argument
-val networkModule = module {
-    single<AuthHttpClient>()
-    single<PublicHttpClient>()
-    single<Service>()
-}
-
-// Call site
-val auth: HttpClient = get(named("auth"))
-```
-
-**Do not write `single<HttpClient>(named("auth")) { ... }`** — that's the
-classic-DSL lambda form; it's reserved as a fallback for third-party types that
-can't be annotated (e.g. a `Config` with per-qualifier values):
-
-```kotlin
-// Legitimate classic-DSL fallback: Config is just a data class, no useful annotations
-val networkModule = module {
-    single<Config>(named("authConfig"))   { Config("...") }
-    single<Config>(named("publicConfig")) { Config("...") }
-}
-```
+Kodein's `tag = "x"` maps to Koin's `@Named("x")`, placed on the class (or on
+the consumer's constructor parameter), with a plain `single<T>()` in the module —
+see "Qualifiers" in `references/koin-safe-dsl.md`. `named("x")` stays only for
+classic-DSL lambdas on types you can't annotate (`references/rules.md` §1).
 
 **Stay on `@Named` for Kodein migrations** — don't introduce custom `@Qualifier`
 annotations. Kodein's string-based `tag` semantics map 1:1 to `@Named`, and
@@ -252,18 +185,14 @@ For multiple runtime args, list each `@InjectedParam` parameter — order matche
 
 | Kodein                                  | Koin                            |
 |-----------------------------------------|---------------------------------|
-| `class X(override val di: DI) : DIAware` | `class X : KoinComponent`      |
+| `class X(override val di: DI) : DIAware` | Normal class → constructor injection. Android / framework entry point → its Koin API (`references/entry-points.md`). `KoinComponent` only with the user's OK (`references/rules.md` §8) |
 | `val r: Repo by instance()`             | `val r: Repo by inject()`       |
 | `val r: Repo = di.direct.instance()`    | `val r: Repo = get()`           |
 | `val r: Repo by instance(tag = "x")`    | `val r: Repo by inject(named("x"))` |
-| `val r: () -> Repo by provider()` (new instance per call when bound to `provider`) | Re-resolve via `get<Repo>()` on each call (`KoinComponent`). `Lazy<Repo>` only matches Kodein `provider()` over a `singleton` binding — semantics differ for `provider` bindings. |
+| `val r: () -> Repo by provider()` (new instance per call when bound to `provider`) | `factory<Repo>()` + re-resolve on each call — needs a service locator (`KoinComponent`, `references/rules.md` §8). `Lazy<Repo>` only matches Kodein `provider()` over a `singleton` binding — semantics differ for `provider` bindings. |
 | `val r: Repo? by instanceOrNull()`      | `val r: Repo? by injectOrNull()` (or auto `Repo?` constructor param) |
 
-Prefer **constructor injection** in Koin — declare dependencies as constructor
-parameters and let `single<T>()` / `factory<T>()` resolve them via reified
-generics. Reserve `KoinComponent` for cases where constructor injection is
-impossible (Android `Activity` / `Fragment`, frameworks that own object
-construction).
+Constructor injection everywhere else — `references/principles.md` rule 1–2.
 
 ---
 
@@ -293,7 +222,7 @@ class App : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
-            modules(module<AppModule>())
+            modules(appModule)            // one app module that includes the feature modules
         }
     }
 }
@@ -319,7 +248,8 @@ withDI(di) {
 **Koin**
 
 ```kotlin
-KoinContext {
+@Composable
+fun Screen() {
     val repo: Repository = koinInject()
     val vm: MyViewModel = koinViewModel()
 }
@@ -378,13 +308,8 @@ val koinTestRule = KoinTestRule.create {
         single<FakeRepository>().bind<Repository>()  // overrides previous binding
     })
 }
-
-@Test
-fun `verify module graph`() = checkModules {
-    modules(appModule)
-}
 ```
 
-Prefer the **Koin Compiler Plugin's A1/A2/A3 verification layers** to catch missing
-bindings at compile time. `checkModules { }` (runtime) remains useful for DSL-only
-modules or as a belt-and-braces check in CI.
+Graph verification: the **Koin Compiler Plugin's A1/A2/A3 layers** catch missing
+bindings at compile time. Don't add `checkModules { }` / `verify()` — both are on
+their way to deprecation.

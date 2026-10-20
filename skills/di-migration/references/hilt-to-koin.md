@@ -1,9 +1,9 @@
 # Hilt → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-annotations.md`](koin-annotations.md) → "Setup" for the standard Gradle block, JSR-330 support note, and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
-1. [Progressive Migration with koin-android-dagger](#progressive-migration)
+1. [Progressive Migration with koin-dagger-bridge](#progressive-migration)
 2. [Annotation Mapping](#annotation-mapping)
 3. [Gradle Changes](#gradle-changes)
 3. [Module Conversion](#module-conversion)
@@ -22,8 +22,8 @@
 
 Do **not** rewrite existing Hilt/Dagger modules in place. Instead:
 
-1. Create a new empty Koin module (e.g. `appKoinModule`) and call `startKoin { modules(appKoinModule) }`
-2. Add the **`koin-android-dagger`** bridge so Koin and Hilt/Dagger can coexist
+1. Set Koin up **alongside** the existing container — the `koin-setup` skill (Gradle, style, start)
+2. Add the **`koin-dagger-bridge`** bridge so Koin and Hilt/Dagger can coexist
 3. Move definitions from Hilt modules into the Koin module one feature at a time
 4. Inject from either container at the call sites until migration is complete
 5. Remove Hilt entry points, modules, and dependencies only after every binding has moved
@@ -31,7 +31,7 @@ Do **not** rewrite existing Hilt/Dagger modules in place. Instead:
 ### Option A — library bridge
 
 ```kotlin
-implementation("io.insert-koin:koin-android-dagger:<version>")
+implementation("io.insert-koin:koin-dagger-bridge:<version>")
 ```
 
 The bridge lets Hilt-generated entry points resolve dependencies that have already moved
@@ -68,12 +68,7 @@ class SettingsViewModel(private val userData: UserDataRepository) : ViewModel()
 When the binding migrates into Koin, delete the bridge function and the
 `@EntryPoint` interface from this module — blast radius stays local.
 
-When multiple consumers need the same bridge:
-1. **Duplicate** in each consumer (default — cheap).
-2. **Migrate `UserDataRepository` first** — bridges disappear naturally.
-3. **Promote** to a `SharedBridgeModule` (`@Module + @Configuration`) consumed
-   via `@Module(includes = [SharedBridgeModule::class])`. `includes` keeps A1
-   happy; siblings don't. Promote on demand, not pre-emptively.
+Several consumers need the same bridge → "Bridging with the existing DI" in the `di-migration` SKILL.md.
 
 ### Option C — `Scope.dagger<T>()` helper (for Safe DSL modules)
 
@@ -155,24 +150,7 @@ dependencies {
 
 ### Step 2: Add Koin + Compiler Plugin
 
-```kotlin
-// ADD to build.gradle.kts (app)
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-
-    // If using Compose:
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")
-
-    // If using WorkManager:
-    implementation("io.insert-koin:koin-androidx-workmanager:4.2.1")
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ## Module Conversion
@@ -275,22 +253,7 @@ class UserRepository(
 
 ## Parameter Resolution
 
-All constructor and function parameters are **handled automatically by the Koin Compiler**:
-`T`, `T?`, `Lazy<T>`, `List<T>` — just declare the type, the compiler does the rest.
-
-Use `@InjectedParam` for runtime values, `@Named("x")` for qualified dependencies.
-
-```kotlin
-// All parameter types handled by the Koin Compiler:
-@Singleton
-class MyService(
-    private val api: ApiService,              // T — required
-    private val logger: Logger?,              // T? — optional
-    private val heavyDep: Lazy<HeavyService>, // Lazy<T> — deferred
-    private val plugins: List<Plugin>,        // List<T> — all matching
-    @Named("io") private val dispatcher: CoroutineDispatcher  // qualified
-)
-```
+Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-safe-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
 
 ## Component Conversion
 
@@ -322,7 +285,6 @@ class App : Application() {
         super.onCreate()
         startKoin<App> {
             androidContext(this@App)
-            androidLogger()
         }
     }
 }
@@ -352,32 +314,7 @@ Hilt graph underneath.
 
 ### Convention plugin gotcha
 
-If you apply the Koin Compiler Plugin through a Gradle convention plugin that
-uses `configure<KoinGradleExtension> { ... }`, the classpath dependency must be
-`implementation`, **not** `compileOnly`:
-
-```kotlin
-// convention plugin's build.gradle.kts — WRONG
-dependencies {
-    compileOnly(libs.koin.compiler.gradlePlugin)
-}
-// Fails at runtime: NoClassDefFoundError: org/koin/compiler/plugin/KoinGradleExtension
-
-// RIGHT
-dependencies {
-    implementation(libs.koin.compiler.gradlePlugin)
-}
-```
-
-The extension class needs to be on the runtime classpath of the convention
-plugin itself because the `configure { }` block executes at build configuration time.
-
-**Working example:** the Koin team maintains a Now-in-Android fork on a `koin_plugin`
-branch that includes a fully-wired `KoinConventionPlugin`. Use it as the
-reference when porting a multi-module Android/KMP project's convention-plugin
-setup:
-
-- https://github.com/InsertKoinIO/nowinandroid/blob/koin_plugin/build-logic/convention/src/main/kotlin/KoinConventionPlugin.kt
+Gradle convention plugins: see "Convention plugins" in `references/gradle.md`.
 
 ### Entry Points
 
@@ -473,102 +410,7 @@ Koin provides **scope archetype annotations** that map directly to Android lifec
 | `ServiceComponent`           | `@Scope(Service::class)` or `@Factory`                 | `scope<Service> { scoped { ... } }` |
 | Custom `@DefineComponent`    | `@Scope(CustomType::class)`                            | `scope<CustomType> { scoped { ... } }` |
 
-### Scope Archetype Imports
-
-```kotlin
-import org.koin.android.annotation.ActivityScope         // Activity lifecycle
-import org.koin.android.annotation.ActivityRetainedScope  // Survives config changes
-import org.koin.android.annotation.FragmentScope          // Fragment lifecycle
-import org.koin.core.annotation.ViewModelScope            // ViewModel lifecycle
-```
-
-### Scope Archetype Examples
-
-```kotlin
-// BEFORE: Hilt ActivityComponent
-@Module
-@InstallIn(ActivityComponent::class)
-object ActivityModule {
-    @Provides @ActivityScoped
-    fun providePresenter(repo: UserRepository): Presenter = PresenterImpl(repo)
-}
-```
-
-```kotlin
-// AFTER: Koin — @ActivityScope archetype
-@ActivityScope
-class PresenterImpl(private val repo: UserRepository) : Presenter
-
-// In Activity — scope tied to Activity lifecycle
-class MainActivity : AppCompatActivity(), KoinScopeComponent {
-    override val scope: Scope by activityScope()
-    private val presenter: Presenter by inject()
-}
-```
-
-```kotlin
-// BEFORE: Hilt ViewModelComponent
-@Module
-@InstallIn(ViewModelComponent::class)
-object ViewModelModule {
-    @Provides @ViewModelScoped
-    fun provideUseCase(repo: UserRepository): GetUsersUseCase = GetUsersUseCase(repo)
-}
-```
-
-```kotlin
-// AFTER: Koin — @ViewModelScope archetype
-@ViewModelScope
-class GetUsersUseCase(private val repo: UserRepository)
-
-// The use case is scoped to the ViewModel's lifecycle
-```
-
-```kotlin
-// Activity-retained scope (survives configuration changes)
-@ActivityRetainedScope
-class SessionCache(private val api: ApiService)
-```
-
-```kotlin
-// Fragment scope
-@FragmentScope
-class FragmentPresenter(private val repo: Repository)
-```
-
-### Custom Scope Example
-
-```kotlin
-// BEFORE: Hilt custom scope
-@Scope
-@Retention(AnnotationRetention.RUNTIME)
-annotation class AuthScope
-
-@DefineComponent(parent = SingletonComponent::class)
-interface AuthComponent
-
-@DefineComponent.Builder
-interface AuthComponentBuilder {
-    fun build(): AuthComponent
-}
-```
-
-```kotlin
-// AFTER: Koin — much simpler
-class AuthScopeId  // Scope marker class
-
-@Scope(AuthScopeId::class)
-class AuthTokenProvider(private val api: ApiService)
-
-@Scope(AuthScopeId::class)
-class AuthRepository(private val api: ApiService, private val db: AppDatabase)
-
-// Open/close scope manually
-val authScope = getKoin().createScope<AuthScopeId>("auth_session")
-val tokenProvider = authScope.get<AuthTokenProvider>()
-// When done:
-authScope.close()
-```
+Koin side (archetype annotations, DSL, component usage, custom scopes): `references/scopes.md`.
 
 ## Assisted Inject
 
@@ -646,22 +488,7 @@ class SyncWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params)
 ```
 
-```kotlin
-// AFTER: Koin
-@KoinWorker
-class SyncWorker(
-    context: Context,
-    params: WorkerParameters,
-    private val api: ApiService
-) : CoroutineWorker(context, params)
-
-// Application setup
-startKoin {
-    androidContext(this@App)
-    workManagerFactory()
-    modules(module<AppModule>())
-}
-```
+AFTER: `@KoinWorker` + `workManagerFactory()` — "WorkManager" in `references/entry-points.md`.
 
 ## Compose Integration
 
@@ -684,9 +511,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            KoinContext {
-                val viewModel = koinViewModel<MainViewModel>()
-            }
+            val viewModel = koinViewModel<MainViewModel>()   // Koin started in Application — no wrapper needed
         }
     }
 }
@@ -698,18 +523,15 @@ class MainActivity : ComponentActivity() {
 // BEFORE: Hilt — scoped to nav backstack entry
 val viewModel: DetailViewModel = hiltViewModel()
 
-// AFTER: Koin — scoped to nav backstack entry
-val viewModel = koinViewModel<DetailViewModel>(
-    viewModelStoreOwner = LocalViewModelStoreOwner.current!!
-)
+// AFTER: Koin — scoped to nav backstack entry (the default owner)
+val viewModel = koinViewModel<DetailViewModel>()
 ```
 
-For nested navigation graphs with shared ViewModels:
+For nested navigation graphs with shared ViewModels (`koin-compose-viewmodel-navigation`):
 ```kotlin
-val parentEntry = remember(navBackStackEntry) {
-    navController.getBackStackEntry("parent_route")
+composable<DetailRoute> { backStackEntry ->
+    val shared = backStackEntry.sharedKoinViewModel<SharedViewModel>(navController)
 }
-val sharedViewModel = koinViewModel<SharedViewModel>(
-    viewModelStoreOwner = parentEntry
-)
 ```
+
+Navigation 3 and the full navigation guidance: `references/entry-points.md`.

@@ -1,6 +1,6 @@
 # Koin DSL → Koin 4.x Safe DSL + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-safe-dsl.md`](koin-safe-dsl.md) → "Setup" for the standard Gradle block and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Why Migrate](#why-migrate)
@@ -37,7 +37,7 @@ compile time, giving you:
 The key insight: you keep the DSL module approach but replace `singleOf(::Class)` or
 `single { Class(get()) }` with `single<Class>()`. The compiler plugin does the rest.
 
-Requires Kotlin ≥ 2.3.20 (K2) and Koin 4.2.1+.
+Versions: `references/rules.md` §3.
 
 ## Core DSL Mapping
 
@@ -54,7 +54,7 @@ Requires Kotlin ≥ 2.3.20 (K2) and Koin 4.2.1+.
 | `scopedOf(::MyClass)`                               | `scoped<MyClass>()`                                  |
 | `worker { MyWorker(get(), get(), get()) }`          | `worker<MyWorker>()`                                 |
 | `singleOf(::Impl) { bind<Interface>() }`            | `single<Impl>().withOptions { bind<Interface>() }`   |
-| `singleOf(::Impl) { named("x") }`                  | `single<Impl>(named("x"))`                           |
+| `singleOf(::Impl) { named("x") }`                  | `@Named("x")` on the class + `single<Impl>()`        |
 | `singleOf(::Impl) { createdAtStart() }`             | `single<Impl>().withOptions { createdAtStart() }`    |
 | `single(named("x")) { Dispatchers.IO }`            | `single(named("x")) { Dispatchers.IO }` (unchanged for lambdas with custom logic) |
 | `module { includes(other) }`                        | `module { includes(other) }` (unchanged)              |
@@ -78,24 +78,7 @@ dependencies {
 
 ### After (Koin 4.x + Compiler Plugin)
 
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")
-}
-
-// Optional configuration
-koinCompiler {
-    compileSafety = true        // Validate dependency graph at compile time (default: true)
-    userLogs = true             // See detected components in build output
-    skipDefaultValues = true    // Skip params with default values (default: true)
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ### How it works
@@ -134,10 +117,13 @@ val dataModule = module {
 
 ```kotlin
 // AFTER: Safe DSL + Compiler Plugin
+fun buildDatabase(context: Context): AppDatabase = AppDatabase.create(context)
+fun buildUserDao(db: AppDatabase): UserDao = db.userDao()
+
 val dataModule = module {
-    // Third-party classes with custom creation logic — keep lambda syntax
-    single { AppDatabase.create(androidContext()) }
-    single { get<AppDatabase>().userDao() }
+    // Custom creation logic — function builders (references/rules.md §1)
+    single { create(::buildDatabase) }
+    single { create(::buildUserDao) }
 
     // Classes you own with standard constructors — use reified type
     single<UserRepository>()
@@ -261,8 +247,8 @@ val dispatcherModule = module {
 }
 
 val repoModule = module {
-    // Reified type — qualifier on the constructor param via @Named
-    single<MyRepo>(named("io"))
+    // Plain reified type — the qualifier lives on MyRepo's constructor param
+    single<MyRepo>()
 }
 
 // MyRepo class — @Named on the constructor param tells the compiler which qualifier to use
@@ -315,47 +301,7 @@ scope.close()
 
 ### Android Scope Archetypes
 
-For Android lifecycle scopes, use the scope archetype DSL functions:
-
-```kotlin
-// BEFORE: Old DSL with generic scope
-val activityModule = module {
-    scope<MyActivity> {
-        scoped { ActivityPresenter(get()) }
-    }
-}
-```
-
-```kotlin
-// AFTER: Safe DSL with scope archetypes
-val activityModule = module {
-    activityScope {
-        scoped<ActivityPresenter>()
-    }
-    activityRetainedScope {
-        scoped<SessionCache>()    // Survives configuration changes
-    }
-    fragmentScope {
-        scoped<FragmentPresenter>()
-    }
-    viewModelScope {
-        scoped<ViewModelHelper>()
-    }
-}
-```
-
-Usage in Activity/Fragment:
-```kotlin
-class MainActivity : AppCompatActivity(), KoinScopeComponent {
-    override val scope: Scope by activityScope()
-    private val presenter: ActivityPresenter by inject()
-}
-
-class DetailFragment : Fragment(), KoinScopeComponent {
-    override val scope: Scope by fragmentScope()
-    private val presenter: FragmentPresenter by inject()
-}
-```
+`references/scopes.md`.
 
 ## Bindings
 
@@ -475,12 +421,15 @@ startKoin {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Safe DSL — third-party types through function builders
+fun buildOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
+fun buildRetrofit(client: OkHttpClient): Retrofit = Retrofit.Builder().client(client).baseUrl(URL).build()
+fun buildApi(retrofit: Retrofit): ApiService = retrofit.create(ApiService::class.java)
+
 val networkModule = module {
-    // Third-party types with custom creation logic — keep lambda syntax
-    single { OkHttpClient.Builder().build() }
-    single { Retrofit.Builder().client(get()).baseUrl(URL).build() }
-    single { get<Retrofit>().create(ApiService::class.java) }
+    single { create(::buildOkHttp) }
+    single { create(::buildRetrofit) }
+    single { create(::buildApi) }
 }
 
 val repositoryModule = module {
@@ -497,65 +446,17 @@ startKoin {
 }
 ```
 
-**When to keep lambda syntax vs use reified type:**
-- `single<MyClass>()` — for classes you own with standard constructors
-- `single { thirdParty.create(...) }` — for third-party classes, builder patterns, or custom creation logic
-- Both are validated by the compiler plugin when `compileSafety = true`
+Which form for which definition: `references/rules.md` §1 (plain constructor →
+`single<T>()`; third-party / custom expression → function builder, lambda as a
+last resort). All forms are checked by the Compiler Plugin.
 
 ## KMP Modules
 
-The Safe DSL works identically across all KMP targets:
-
-```kotlin
-// commonMain
-val commonModule = module {
-    single<CommonRepository>()
-    single<CommonUseCase>()
-}
-
-// androidMain
-val androidModule = module {
-    includes(commonModule)
-    single { AndroidSqliteDriver(AppDb.Schema, androidContext(), "app.db") as DatabaseDriver }
-}
-
-// iosMain
-val iosModule = module {
-    includes(commonModule)
-    single { NativeSqliteDriver(AppDb.Schema, "app.db") as DatabaseDriver }
-}
-```
-
-### Platform-specific with expect/actual
-
-```kotlin
-// commonMain
-expect fun platformModule(): Module
-
-// androidMain
-actual fun platformModule() = module {
-    single { AndroidPlatformService() as PlatformService }
-}
-
-// iosMain
-actual fun platformModule() = module {
-    single { IosPlatformService() as PlatformService }
-}
-```
+Same Safe DSL on every target; common and platform modules with `expect` / `actual`: `references/rules.md` §7.
 
 ## Compose Integration
 
-No changes on the Compose side — the Safe DSL produces the same Koin modules:
-
-```kotlin
-@Composable
-fun UserScreen() {
-    val viewModel = koinViewModel<UserViewModel>()
-    val service = koinInject<MyService>()
-}
-```
-
-The only change is inside the `module { }` blocks.
+No change on the Compose side — the modules change, not the call sites (`references/entry-points.md`).
 
 ## Mixing Old and New DSL
 
@@ -628,17 +529,11 @@ Missing dependencies produce standard Kotlin compiler errors:
 e: Missing definition for type 'ApiService' required by 'UserRepository'
 ```
 
-### Runtime verification (optional safety net)
+### Runtime verification
 
-```kotlin
-@Test
-fun verifyKoinModules() {
-    koinApplication {
-        modules(appModule)
-        checkModules()
-    }
-}
-```
+Not needed: the compile-time check replaces it. `checkModules()` and `verify()`
+are on their way to deprecation — remove existing ones once the Compiler Plugin
+is in place.
 
 ## Common Pitfalls
 
@@ -680,26 +575,20 @@ val module = module {
     single<Retrofit>()  // Compiler error: can't resolve constructor
 }
 
-// RIGHT — use lambda syntax for custom creation logic
+// RIGHT — a function builder (the compiler checks its parameters)
+fun buildRetrofit(client: OkHttpClient): Retrofit = Retrofit.Builder().client(client).baseUrl(URL).build()
 val module = module {
-    single { Retrofit.Builder().client(get()).baseUrl(URL).build() }
+    single { create(::buildRetrofit) }
 }
 ```
 
 ### 4. Forgetting the compiler plugin in build.gradle.kts
 
-```kotlin
-// WRONG — single<T>() without the plugin is just a regular Koin call
-// It will compile but won't have compile-time validation
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-}
-
-// RIGHT — add the plugin for compile-time transformation
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-```
+Without `id("io.insert-koin.compiler.plugin")`, Safe DSL code (`single<T>()`,
+`create(::T)`, `startKoin<App>`…) compiles but **fails at runtime** with
+`NotImplementedError` — these functions are stubs the plugin replaces at build
+time. Apply the plugin in every Gradle module that declares Koin definitions
+(`references/gradle.md`).
 
 ### 5. Mixing scopes incorrectly
 

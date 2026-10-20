@@ -111,7 +111,7 @@ claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp
 ## Requirements
 
 - Kotlin ≥ 2.3.20 (K2 compiler)
-- Koin 4.2.1+
+- Koin 4.2.2+
 
 ## Contributing
 
@@ -119,7 +119,7 @@ Issues and pull requests are welcome.
 
 - **Bug reports / migration path gaps** → open an issue with the source framework, a minimal snippet, and the expected Koin output
 - **New migration paths** → add a `references/<source>-to-koin.md` guide following the existing structure, register it in `skills/di-migration/SKILL.md`, then run `./build.sh`
-- **Build** the plugin locally: `./build.sh` (produces `koin-migration-plugin.zip` and `di-migration-skill.skill`)
+- **Build** the plugin locally: `./build.sh` (assembles `build/plugin/`, plus `build/*.skill` bundles and `build/koin-migration-plugin.zip`)
 - **Release** (maintainers): see [RELEASING.md](./RELEASING.md) for the full checklist
 
 ## Repository Layout
@@ -131,7 +131,6 @@ Issues and pull requests are welcome.
 skills/di-migration/
   SKILL.md                          # skill entry point
   references/*.md                   # per-path migration guides
-  evals/evals.json                  # evaluation cases
 build.sh                            # validates + packages the plugin
 ```
 
