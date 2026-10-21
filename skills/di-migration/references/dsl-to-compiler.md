@@ -1,6 +1,6 @@
-# Koin DSL → Koin 4.x Safe DSL + Koin Compiler Plugin Migration Reference
+# Koin DSL → Koin 4.x Compiler Plugin DSL Migration Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
 1. [Why Migrate](#why-migrate)
@@ -23,7 +23,7 @@
 
 ## Why Migrate
 
-The Koin Compiler Plugin transforms the **Safe DSL** (`single<T>()`, `factory<T>()`) at
+The Koin Compiler Plugin transforms the **Compiler Plugin DSL** (`single<T>()`, `factory<T>()`) at
 compile time, giving you:
 
 - **Compile-time verification** — missing or circular dependencies caught at build time, not at runtime
@@ -41,7 +41,7 @@ Versions: `references/rules.md` §3.
 
 ## Core DSL Mapping
 
-| Old Koin DSL (3.x / 4.x manual)                    | New Safe DSL (Compiler Plugin)                       |
+| Old Koin DSL (3.x / 4.x manual)                    | New Compiler Plugin DSL                                             |
 |-----------------------------------------------------|------------------------------------------------------|
 | `single { MyClass(get()) }`                         | `single<MyClass>()`                                  |
 | `single { MyClass(get(), get()) }`                  | `single<MyClass>()`                                  |
@@ -116,7 +116,7 @@ val dataModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL + Compiler Plugin
+// AFTER: Compiler Plugin DSL
 fun buildDatabase(context: Context): AppDatabase = AppDatabase.create(context)
 fun buildUserDao(db: AppDatabase): UserDao = db.userDao()
 
@@ -142,7 +142,7 @@ val presenterModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val presenterModule = module {
     factory<DetailPresenter>()
     factory<ListPresenter>()
@@ -159,7 +159,7 @@ val appModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val appModule = module {
     single<AnalyticsInitializer>().withOptions { createdAtStart() }
 }
@@ -177,7 +177,7 @@ val viewModelModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val viewModelModule = module {
     viewModel<MainViewModel>()
     viewModel<DetailViewModel>()
@@ -205,7 +205,7 @@ val viewModelModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL — parameters still work the same way
+// AFTER: Compiler Plugin DSL — parameters still work the same way
 val viewModelModule = module {
     viewModel<PlayerViewModel>()
     // The compiler knows which params come from DI and which from parametersOf()
@@ -239,7 +239,7 @@ val repoModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val dispatcherModule = module {
     // Lambda syntax for inline values (no constructor to resolve)
     single(named("io")) { Dispatchers.IO as CoroutineDispatcher }
@@ -283,7 +283,7 @@ val sessionModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val sessionModule = module {
     scope<UserSession> {
         scoped<SessionManager>()
@@ -315,7 +315,7 @@ val repoModule = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val repoModule = module {
     single<UserRepositoryImpl>().withOptions { bind<UserRepository>() }
 }
@@ -331,7 +331,7 @@ val module = module {
 ```
 
 ```kotlin
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val module = module {
     single<ServiceImpl>().withOptions {
         bind<ServiceA>()
@@ -358,14 +358,14 @@ val module = module {
     factory { params -> Notification(params.get(), get()) }
 }
 
-// AFTER: Safe DSL
+// AFTER: Compiler Plugin DSL
 val module = module {
     factory<Notification>()
 }
 // Usage: get<Notification> { parametersOf("title") }
 ```
 
-`@InjectedParam` is the **only annotation needed on classes** in the Safe DSL approach.
+`@InjectedParam` is the **only annotation needed on classes** in the Compiler Plugin DSL approach.
 It tells the compiler "this parameter comes from `parametersOf()`, not from the graph."
 
 ### Nullable dependencies
@@ -421,7 +421,7 @@ startKoin {
 ```
 
 ```kotlin
-// AFTER: Safe DSL — third-party types through function builders
+// AFTER: Compiler Plugin DSL — third-party types through function builders
 fun buildOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
 fun buildRetrofit(client: OkHttpClient): Retrofit = Retrofit.Builder().client(client).baseUrl(URL).build()
 fun buildApi(retrofit: Retrofit): ApiService = retrofit.create(ApiService::class.java)
@@ -452,7 +452,7 @@ last resort). All forms are checked by the Compiler Plugin.
 
 ## KMP Modules
 
-Same Safe DSL on every target; common and platform modules with `expect` / `actual`: `references/rules.md` §7.
+Same Compiler Plugin DSL on every target; common and platform modules with `expect` / `actual`: `references/rules.md` §7.
 
 ## Compose Integration
 
@@ -507,7 +507,7 @@ val module = module {
 
 ## Compile-Time Safety
 
-The Compiler Plugin validates your Safe DSL at 3 levels:
+The Compiler Plugin validates your Compiler Plugin DSL at 3 levels:
 
 ### What gets validated
 
@@ -584,7 +584,7 @@ val module = module {
 
 ### 4. Forgetting the compiler plugin in build.gradle.kts
 
-Without `id("io.insert-koin.compiler.plugin")`, Safe DSL code (`single<T>()`,
+Without `id("io.insert-koin.compiler.plugin")`, Compiler Plugin DSL code (`single<T>()`,
 `create(::T)`, `startKoin<App>`…) compiles but **fails at runtime** with
 `NotImplementedError` — these functions are stubs the plugin replaces at build
 time. Apply the plugin in every Gradle module that declares Koin definitions

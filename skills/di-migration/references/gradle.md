@@ -33,9 +33,9 @@ dependencies {
 | Tests | `koin-test` + `koin-test-junit4` or `koin-test-junit5` | `commonTest` / `test` |
 | Migration from / coexistence with Dagger or Hilt | `koin-dagger-bridge` | `androidMain` |
 
-- **`koin-annotations`** — required for the Annotations style. With Safe DSL,
+- **`koin-annotations`** — required for the Annotations style. With Compiler Plugin DSL,
   needed only when classes carry Koin annotations (`@InjectedParam`, `@Named`,
-  `@Qualifier`…). The Safe DSL functions themselves are in `koin-core`.
+  `@Qualifier`…). The Compiler Plugin DSL functions themselves are in `koin-core`.
 - **`koin-dagger-bridge`** — lets Koin definitions resolve Dagger / Hilt
   bindings (`Scope.dagger<T>()`), for progressive migration and for apps that
   keep both containers. See the `di-migration` skill.

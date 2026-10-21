@@ -1,6 +1,6 @@
 # Kodein → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)
@@ -36,7 +36,7 @@ window, write a small Koin-scope helper that resolves from the live `DI`
 container — same shape as the `Scope.dagger<T>()` helper in `hilt-to-koin.md`,
 just delegating to Kodein's `direct.instance()` instead of `EntryPoints.get()`.
 
-**Co-locate bridge helpers in the consumer module** (Safe DSL `module { }` for
+**Co-locate bridge helpers in the consumer module** (Compiler Plugin DSL `module { }` for
 the feature that consumes the Kodein binding) — strict A1 verification then
 stays green and no compile-check relaxation is needed. See SKILL.md →
 "Bridging with the existing DI" for the full rationale.
@@ -45,9 +45,9 @@ stays green and no compile-check relaxation is needed. See SKILL.md →
 
 ## Concept Mapping
 
-Mappings target **Safe DSL + Koin Compiler Plugin** (no annotations for Kodein):
+Mappings target **Compiler Plugin DSL** (no annotations for Kodein):
 
-| Kodein Construct                     | Koin Safe DSL Equivalent                              |
+| Kodein Construct                     | Koin Compiler Plugin DSL Equivalent                              |
 |--------------------------------------|-------------------------------------------------------|
 | `DI { ... }` container               | `startKoin { modules(...) }`                          |
 | `DI.Module("name") { ... }`          | `val appModule = module { ... }`                      |
@@ -96,18 +96,18 @@ val di = DI {
 }
 ```
 
-**Koin (Safe DSL — the default for Kodein migrations)**
+**Koin (Compiler Plugin DSL — the default for Kodein migrations)**
 
 Kodein's `DI { ... }` builder maps cleanly onto Koin's `module { }` lambda.
-Safe DSL keeps the same shape while adding reified type parameters and
+Compiler Plugin DSL keeps the same shape while adding reified type parameters and
 compile-time verification via the Koin Compiler Plugin. **Do not produce an
 annotations-based migration for Kodein** — there are no source annotations to
 map from, and the DSL shape is what Kodein users are coming from.
 
 ```kotlin
 val appModule = module {
-    single<RepositoryImpl>().bind<Repository>()  // Safe DSL, ctor auto-resolved
-    single<HttpClient>()                         // Safe DSL, no ctor params
+    single<RepositoryImpl>().bind<Repository>()  // Compiler Plugin DSL, ctor auto-resolved
+    single<HttpClient>()                         // Compiler Plugin DSL, no ctor params
     // viewModel<MyViewModel>()
     // factory<Connection>()
 }
@@ -117,16 +117,16 @@ startKoin {
 }
 ```
 
-Kodein migrations produce **Safe DSL** — never `@Singleton` / `@Factory` /
+Kodein migrations produce **Compiler Plugin DSL** — never `@Singleton` / `@Factory` /
 `@Module` annotations. Definition forms (reified `single<T>()`, `.bind<I>()`,
 function builders for third-party types, lambdas only for custom expressions):
-`references/rules.md` §1 and `references/koin-safe-dsl.md`.
+`references/rules.md` §1 and `references/koin-compiler-plugin-dsl.md`.
 
 ---
 
 ## Bindings
 
-| Kodein                                       | Koin Safe DSL            |
+| Kodein                                       | Koin Compiler Plugin DSL            |
 |----------------------------------------------|--------------------------|
 | `bind<T>() with singleton { T(instance()) }` | `single<T>()`            |
 | `bind<T>() with provider { T() }`            | `factory<T>()`           |
@@ -149,7 +149,7 @@ val auth: HttpClient by instance(tag = "auth")
 
 Kodein's `tag = "x"` maps to Koin's `@Named("x")`, placed on the class (or on
 the consumer's constructor parameter), with a plain `single<T>()` in the module —
-see "Qualifiers" in `references/koin-safe-dsl.md`. `named("x")` stays only for
+see "Qualifiers" in `references/koin-compiler-plugin-dsl.md`. `named("x")` stays only for
 classic-DSL lambdas on types you can't annotate (`references/rules.md` §1).
 
 **Stay on `@Named` for Kodein migrations** — don't introduce custom `@Qualifier`
@@ -263,7 +263,7 @@ Kodein and Koin both support KMP. With the Koin Compiler Plugin:
 
 - One plugin declaration in the root/shared module — no per-target configuration
 - Use `expect`/`actual` for platform-specific bindings. Since Kodein migration
-  output is Safe DSL only, the typical split is either an `expect fun` / `actual
+  output is Compiler Plugin DSL only, the typical split is either an `expect fun` / `actual
   fun` factory (shown below) or an `expect class` / `actual class` for the
   platform-specific implementation. Pick the smallest unit that varies per
   platform.

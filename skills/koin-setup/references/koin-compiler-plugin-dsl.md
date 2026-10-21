@@ -1,6 +1,6 @@
-# Koin Safe DSL + Compiler Plugin — Reference
+# Koin Compiler Plugin DSL — Reference
 
-Concrete cheat sheet for **Koin Safe DSL + Compiler Plugin** code. Shared by every Koin skill (setup, core, migration, diagnose) — exact imports and syntax live here; don't infer them from memory.
+Concrete cheat sheet for **Koin Compiler Plugin DSL** code. Shared by every Koin skill (setup, core, migration, diagnose) — exact imports and syntax live here; don't infer them from memory.
 
 For depth, see https://insert-koin.io.
 
@@ -10,21 +10,21 @@ Gradle and versions: `references/gradle.md`. Policy (style choice, DSL forms, co
 
 ## Imports
 
-**Safe DSL with the Koin Compiler Plugin lives in a single package** —
+**The Compiler Plugin DSL lives in a single package** —
 `org.koin.plugin.module.dsl`. One import covers most of the surface.
 
 | Symbol                                                                                              | Import                                       | Notes                                                          |
 |-----------------------------------------------------------------------------------------------------|----------------------------------------------|----------------------------------------------------------------|
-| `single<T>()`, `factory<T>()` (on `Module`)                                                         | `org.koin.plugin.module.dsl.*`               | **Safe DSL — reified, no lambda. Compiler resolves ctor.**     |
+| `single<T>()`, `factory<T>()` (on `Module`)                                                         | `org.koin.plugin.module.dsl.*`               | **Compiler Plugin DSL — reified, no lambda. Compiler resolves ctor.**     |
 | `scoped<T>()`, `factory<T>()` (on `ScopeDSL`)                                                       | `org.koin.plugin.module.dsl.*`               | Scope-bound reified definitions                                |
 | `viewModel<T>()`                                                                                    | `org.koin.plugin.module.dsl.*`               | From `koin-core-viewmodel`                                     |
 | `worker<T>()`                                                                                       | `org.koin.plugin.module.dsl.*`               | From `koin-androidx-workmanager`                               |
 | `Scope.create(::T)`                                                                                 | `org.koin.plugin.module.dsl.create`          | Explicit factory-function reference (alternative to `single<T>()`) |
 | `module { }` (builder lambda)                                                                       | `org.koin.dsl.module`                        | Module declaration block                                       |
-| `startKoin { modules(...) }`                                                                        | `org.koin.core.context.startKoin`            | **Classic startKoin — use this for Safe DSL output.** The reified `startKoin<App>()` from `org.koin.plugin.module.dsl` is for `@KoinApplication` (annotations path) only. |
+| `startKoin { modules(...) }`                                                                        | `org.koin.core.context.startKoin`            | **Classic startKoin — use this for Compiler Plugin DSL output.** The reified `startKoin<App>()` from `org.koin.plugin.module.dsl` is for `@KoinApplication` (annotations path) only. |
 | `.bind<T>()` on `KoinDefinition<*>`                                                                 | `org.koin.core.module.dsl.bind` *(extension)* | Interface binding (preferred shorthand). Verify with IDE auto-import |
 | `.withOptions { ... }`                                                                              | `org.koin.core.module.dsl.withOptions`       | Combine binding with other options                             |
-| `singleOf(::T)`, `factoryOf(::T)`, `viewModelOf(::T)`                                               | `org.koin.core.module.dsl.*`                 | **Autowire DSL — supported, not for new code. Prefer `single<T>()`**  |
+| `singleOf(::T)`, `factoryOf(::T)`, `viewModelOf(::T)`                                               | `org.koin.core.module.dsl.*`                 | **Constructor DSL — supported, not for new code. Prefer `single<T>()`**  |
 | `named("x")`, `Qualifier`                                                                           | `org.koin.core.qualifier.*`                  | String + custom qualifiers                                     |
 | `parametersOf(...)`                                                                                 | `org.koin.core.parameter.parametersOf`       | Pass runtime params at retrieval                               |
 | `androidContext`, `androidLogger`                                                                   | `org.koin.android.ext.koin.*`                | Android startKoin DSL                                          |
@@ -43,15 +43,15 @@ resolves every constructor parameter automatically — no lambda needed.
 | `single<T>()`                     | Shared instance, class you own                     |
 | `factory<T>()`                    | New instance per resolution, class you own         |
 | `viewModel<T>()`                  | Android ViewModel, class you own                   |
-| `worker<T>()`                     | WorkManager Worker — reified Safe DSL form (needs `koin-androidx-workmanager`) |
+| `worker<T>()`                     | WorkManager Worker — reified Compiler Plugin DSL form (needs `koin-androidx-workmanager`) |
 | `single { create(::T) }`          | Explicit factory-function reference — equivalent to `single<T>()`, use when intent should be visible in review |
 | `single { create(::buildT) }`     | **Function builder** — types that can't be built from their constructor (`Retrofit.Builder()`, `Room.databaseBuilder()`, `OkHttpClient.Builder()`). Parameters injected like a constructor |
 | `single { T(get(), get()) }`      | **Last-resort fallback** — only when a function builder doesn't fit |
-| `singleOf(::T)` / `factoryOf(::T)`| Autowire DSL — supported, keep existing code; new code uses `single<T>()` / `factory<T>()` |
+| `singleOf(::T)` / `factoryOf(::T)`| Constructor DSL — supported, keep existing code; new code uses `single<T>()` / `factory<T>()` |
 
 ```kotlin
 val appModule = module {
-    // Classes you own — reified Safe DSL
+    // Classes you own — reified Compiler Plugin DSL
     single<HttpClient>()
     single<Repository>()                           // auto-resolves ctor from graph
     factory<RequestId>()
@@ -61,7 +61,7 @@ val appModule = module {
     single { create(::buildRetrofit) }
 
     // WorkManager
-    worker<SyncWorker>()                           // Safe DSL — reified, ctor auto-resolved
+    worker<SyncWorker>()                           // Compiler Plugin DSL — reified, ctor auto-resolved
     // Lambda form is fallback only:
     // worker { SyncWorker(androidContext(), get(), get()) }
 }
@@ -89,15 +89,15 @@ val appModule = module {
 
 ## Qualifiers
 
-**`@Named` is the canonical Safe DSL qualifier.** Declare it on the **class
+**`@Named` is the canonical Compiler Plugin DSL qualifier.** Declare it on the **class
 declaration** or on a **constructor parameter**, then use the plain reified
 `single<T>()` in the module. The Compiler Plugin reads `@Named` off the class/param
 and registers the binding with that qualifier.
 
 `@Qualifier` (custom annotation) works the same way and is the type-safe alternative.
 
-**Do not write `single<T>(named("x")) { ... }` in Safe DSL output** — that's
-classic DSL (a lambda-backed overload). The Safe DSL form has no qualifier
+**Do not write `single<T>(named("x")) { ... }` in Compiler Plugin DSL output** — that's
+classic DSL (a lambda-backed overload). The Compiler Plugin DSL form has no qualifier
 argument on `single<T>()`; the qualifier lives on the class.
 
 ### `@Named` — the default pattern
@@ -182,14 +182,14 @@ the parameter type control the resolution:
 
 For runtime parameters, the **preferred form is `@InjectedParam` on the
 constructor** — the Compiler Plugin reads it whether the module uses annotations
-or Safe DSL:
+or Compiler Plugin DSL:
 
 ```kotlin
 // Class side — @InjectedParam marks the runtime-supplied param
 class SessionToken(@InjectedParam val userId: String, val api: AuthApi)
 class DetailViewModel(val repo: Repo, @InjectedParam val itemId: String) : ViewModel()
 
-// Module side — Safe DSL, no lambda needed
+// Module side — Compiler Plugin DSL, no lambda needed
 val appModule = module {
     factory<SessionToken>()
     viewModel<DetailViewModel>()

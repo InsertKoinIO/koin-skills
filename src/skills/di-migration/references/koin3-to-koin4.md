@@ -1,15 +1,15 @@
 # Koin 3.x → Koin 4.x + Koin Compiler Plugin Upgrade Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 This file holds only what changes between Koin 3.x and 4.x. Converting the DSL
-itself (classic / autowire → Safe DSL) is owned by `references/dsl-to-compiler.md`.
+itself (classic / constructor → Compiler Plugin DSL) is owned by `references/dsl-to-compiler.md`.
 
 ## What changes in 4.x
 
 - **Koin Compiler Plugin** — compile-time graph verification, no generated files
   (`references/rules.md` §6)
-- **Safe DSL** — `single<T>()`, `factory<T>()`, `viewModel<T>()`; the existing
+- **Compiler Plugin DSL** — `single<T>()`, `factory<T>()`, `viewModel<T>()`; the existing
   `module { }` structure is kept, only the definitions change
 - **Compose & KMP** — `koin-compose` / `koin-compose-viewmodel`, one API on every target
 - **Scope archetypes** — `activityScope { }`, `fragmentScope { }`,
@@ -32,14 +32,14 @@ if annotations were used).
 
 **Kotlin below 2.3.20 and can't be bumped** — upgrade the Koin runtime to 4.x via
 the BOM without the Compiler Plugin, and keep the existing `singleOf(::T)` /
-lambda definitions (no compile-time check). Do the Safe DSL step once Kotlin is
+lambda definitions (no compile-time check). Do the Compiler Plugin DSL step once Kotlin is
 bumped (`references/rules.md` §3, Kotlin bump).
 
 ## API changes
 
 | Koin 3.x | Koin 4.x | Owner |
 |---|---|---|
-| Classic / autowire DSL | Safe DSL (`single<T>()`…) | `references/dsl-to-compiler.md` |
+| Classic / constructor DSL | Compiler Plugin DSL (`single<T>()`…) | `references/dsl-to-compiler.md` |
 | `getViewModel<VM>()` in Compose (`org.koin.androidx.compose`) | `koinViewModel<VM>()` (`org.koin.compose.viewmodel`) | `references/entry-points.md` (ViewModel, Compose) |
 | `get<T>()` in a composable | `koinInject<T>()` | `references/entry-points.md` (Compose) |
 | `KoinApplication(application = { … })` composable | Android: start in `Application`, nothing in the tree · Compose-started app: `KoinApplication(configuration = koinConfiguration { … })` | `references/entry-points.md` (Compose app start) |

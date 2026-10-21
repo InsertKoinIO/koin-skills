@@ -24,7 +24,7 @@ can be **reused without changes** in Koin annotation output.
 | `@Scope`, `@Scoped`                                                                                 | `org.koin.core.annotation.*`                          | Custom scope annotations                                         |
 | `@ActivityScope`, `@ActivityRetainedScope`, `@FragmentScope`, `@ViewModelScope`                     | `org.koin.core.annotation.*`                          | Android scope archetypes                                         |
 | `startKoin<App>`, `koinApplication<App>`, `koinConfiguration<App>`                                  | `org.koin.plugin.module.dsl.*`                        | **Compiler-Plugin entry points** — reified, trigger auto-discovery. NOT `org.koin.core.context.startKoin` |
-| `KoinApplication.module<T>()`, `KoinApplication.modules(vararg KClass)`                             | `org.koin.plugin.module.dsl.*`                        | **Annotations-only escape hatch** — use when *not* relying on `@Configuration` auto-discovery (variant modules, conditional loading, test overrides). With `@Configuration` this is unnecessary. Not for Safe DSL output. |
+| `KoinApplication.module<T>()`, `KoinApplication.modules(vararg KClass)`                             | `org.koin.plugin.module.dsl.*`                        | **Annotations-only escape hatch** — use when *not* relying on `@Configuration` auto-discovery (variant modules, conditional loading, test overrides). With `@Configuration` this is unnecessary. Not for Compiler Plugin DSL output. |
 | `koinViewModel()`                                                                                   | `org.koin.compose.viewmodel.koinViewModel`          | Compose ViewModel injection                                      |
 | `koinInject()`                                                                                      | `org.koin.compose.koinInject`                         | Compose generic injection                                        |
 | `androidContext`, `androidLogger`                                                                   | `org.koin.android.ext.koin.*`                         | Android startKoin DSL                                            |
@@ -194,6 +194,6 @@ manually.
 
 ## Not covered here
 
-- Safe DSL output — see `references/koin-safe-dsl.md`
+- Compiler Plugin DSL output — see `references/koin-compiler-plugin-dsl.md`
 - Multiplatform setup in depth — see https://insert-koin.io/docs/quickstart/kmp
 - Property file loading, dynamic plugins, ktor integration — see https://insert-koin.io

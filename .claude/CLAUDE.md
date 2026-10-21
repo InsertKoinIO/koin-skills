@@ -33,7 +33,7 @@ Plugin manifests live under **`.claude-plugin/`**:
 Content shared by every skill lives under **`src/shared/`** — one owner file per
 topic (`src/shared/index.md` lists them): `rules.md`, `principles.md`, `gradle.md`,
 `entry-points.md`, `scopes.md`, `testing.md`, `koin-annotations.md`,
-`koin-safe-dsl.md`, `kotzilla.md`.
+`koin-compiler-plugin-dsl.md`, `kotzilla.md`.
 
 **No duplication:** a SKILL.md holds its workflow and the decisions only that
 skill owns; every rule, API or version is written once in `src/shared/` and pointed
@@ -103,7 +103,7 @@ heading must agree before running `./release.sh`.
 
 ## Koin / skill content guidance
 
-- Safe DSL interface binding: both `single<Impl>().bind<I>()` and
+- Compiler Plugin DSL interface binding: both `single<Impl>().bind<I>()` and
   `single<Impl>().withOptions { bind<I>() }` are valid — do not "normalize" one
   to the other
 - Progressive migration is the recommended approach everywhere: create a new

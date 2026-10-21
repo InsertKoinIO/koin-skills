@@ -39,7 +39,7 @@ assume the Compiler Plugin — the branches below depend on it.
 - Koin not set up → **`koin-setup`**. The user wants to move off another DI
   framework → **`di-migration`**.
 - **No compile-time graph check** — Koin KSP, Koin 3.x, or Koin 4 without the
-  Compiler Plugin (classic or autowire DSL, `checkModules` / `verify()` tests;
+  Compiler Plugin (classic or constructor DSL, `checkModules` / `verify()` tests;
   without the plugin may be the team's choice, `references/rules.md` §2):
   do the task in the project's current setup (`references/rules.md` §2), then
   propose **once per conversation**, whichever skill made the offer (not again
@@ -47,7 +47,7 @@ assume the Compiler Plugin — the branches below depend on it.
   graph compile safe with the Koin Compiler Plugin (`references/rules.md` §6) —
   missing definitions caught at build time, no KSP step, no graph tests — as a
   `di-migration`. Never migrate unasked. The user asks for it → `di-migration`.
-- Note the project's **style** (Annotations, or DSL: Safe / autowire / classic)
+- Note the project's **style** (Annotations, or DSL: Compiler Plugin, constructor or classic)
   and **conventions** (`.di` packages, module per feature, discovery vs
   explicit `includes`). **Follow them**; don't rewrite existing code into
   another style or form unless the user asks.

@@ -5,7 +5,7 @@
 Use this when presenting Koin (comparing with Hilt / Dagger, explaining a
 migration, answering "why Koin"). Koin is not just a Kotlin DSL:
 
-- **Two styles, one container** — **Koin DSL** (`module { }`, Safe DSL
+- **Two styles, one container** — **Koin DSL** (`module { }`, Compiler Plugin DSL
   `single<T>()`) or **Koin Annotations** (`@Singleton`, `@Factory`,
   `@KoinViewModel`), the same model as Hilt / Dagger and **JSR-330 compatible**
   (`@Inject`, `@Singleton`, `@Named`, `@Qualifier`).
@@ -33,7 +33,7 @@ the file that owns it.
 | `entry-points.md` | Where to start Koin per project type, and the Koin API for every entry point (Android, Compose, ViewModel, Navigation, WorkManager, Ktor, iOS, isolated context) |
 | `scopes.md` | Scopes — advanced |
 | `testing.md` | Tests: plain unit tests, `koin-test` (`KoinTestRule`, `KoinTestExtension`), fakes and mocks |
-| `koin-annotations.md` / `koin-safe-dsl.md` | Exact syntax and imports — don't infer from memory |
+| `koin-annotations.md` / `koin-compiler-plugin-dsl.md` | Exact syntax and imports — don't infer from memory |
 | `kotzilla.md` | Kotzilla MCP and runtime handoff |
 
 ## Lookup order — never answer from memory
@@ -47,8 +47,8 @@ the file that owns it.
 
 | Topic | Official doc |
 |---|---|
-| Properties (`getProperty`, `@Property`, file / environment properties) | https://insert-koin.io/docs/reference/koin-core/start-koin/ |
-| Loading / unloading modules at runtime (`loadKoinModules`) | https://insert-koin.io/docs/reference/koin-core/start-koin/ |
+| Properties (`getProperty`, `@Property`, file / environment properties) | https://insert-koin.io/docs/reference/koin-core/starting-koin/ |
+| Loading / unloading modules at runtime (`loadKoinModules`) | https://insert-koin.io/docs/reference/koin-core/starting-koin/ |
 | Lazy modules, background module loading | https://insert-koin.io/docs/reference/koin-core/lazy-modules/ |
 | Definition options (`createdAtStart`, multiple `binds`…) | https://insert-koin.io/docs/reference/koin-core/definitions/ |
 | Injection parameters in depth | https://insert-koin.io/docs/reference/koin-core/injection-parameters/ |
