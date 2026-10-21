@@ -22,10 +22,11 @@ Gradle and versions: `references/gradle.md`. Policy (style choice, DSL forms, co
 | `Scope.create(::T)`                                                                                 | `org.koin.plugin.module.dsl.create`          | Explicit factory-function reference (alternative to `single<T>()`) |
 | `module { }` (builder lambda)                                                                       | `org.koin.dsl.module`                        | Module declaration block                                       |
 | `startKoin { modules(...) }`                                                                        | `org.koin.core.context.startKoin`            | **Classic startKoin — use this for Compiler Plugin DSL output.** The reified `startKoin<App>()` from `org.koin.plugin.module.dsl` is for `@KoinApplication` (annotations path) only. |
-| `.bind<T>()` on `KoinDefinition<*>`                                                                 | `org.koin.core.module.dsl.bind` *(extension)* | Interface binding (preferred shorthand). Verify with IDE auto-import |
+| `.bind<T>()` on `KoinDefinition<*>`                                                                 | `org.koin.dsl.bind`                          | Interface binding (shorthand)                                  |
 | `.withOptions { ... }`                                                                              | `org.koin.core.module.dsl.withOptions`       | Combine binding with other options                             |
+| `bind<T>()` inside `withOptions { }`                                                                | `org.koin.core.module.dsl.bind`              | The `BeanDefinition` form                                      |
 | `singleOf(::T)`, `factoryOf(::T)`, `viewModelOf(::T)`                                               | `org.koin.core.module.dsl.*`                 | **Constructor DSL — supported, not for new code. Prefer `single<T>()`**  |
-| `named("x")`, `Qualifier`                                                                           | `org.koin.core.qualifier.*`                  | String + custom qualifiers                                     |
+| `named("x")`, `qualifier<T>()`, `Qualifier`                                                         | `org.koin.core.qualifier.*`                  | String qualifier; `qualifier<Auth>()` = the custom `@Auth` qualifier |
 | `parametersOf(...)`                                                                                 | `org.koin.core.parameter.parametersOf`       | Pass runtime params at retrieval                               |
 | `androidContext`, `androidLogger`                                                                   | `org.koin.android.ext.koin.*`                | Android startKoin DSL                                          |
 | `koinInject()`                                                                       | `org.koin.compose.*`                         | Compose injection                                              |
@@ -163,8 +164,8 @@ val appModule = module {
 ### Call-site lookup
 
 ```kotlin
-val auth: HttpClient   = get(named("auth"))
-val publicCli          = get<HttpClient>(Public)
+val auth: HttpClient      = get(named("auth"))        // @Named("auth")
+val publicCli: HttpClient = get(qualifier<Public>())  // custom @Qualifier annotation class Public
 ```
 
 ## Parameter resolution
@@ -251,7 +252,8 @@ class App : Application() {
 ```
 
 Mixing with an annotated module (only if the user asked for it):
-`modules(appModule, module<AnnotatedModule>())`.
+`startKoin { modules(appModule); module<AnnotatedModule>() }` (`module` from
+`org.koin.plugin.module.dsl`).
 
 ## Retrieval
 
@@ -269,7 +271,7 @@ the definition needs a custom expression:
 
 - Qualified variants that need different constructor arguments:
   ```kotlin
-  single<HttpClient>(Auth) { HttpClient(get(Auth)) }
+  single<HttpClient>(qualifier<Auth>()) { HttpClient(get<Config>(qualifier<Auth>())) }
   ```
 - Runtime parameters on a class you can't annotate: `factory { (id: String) -> … }`
 - Test overrides with hand-built fakes

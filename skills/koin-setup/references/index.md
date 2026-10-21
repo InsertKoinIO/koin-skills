@@ -13,14 +13,13 @@ migration, answering "why Koin"). Koin is not just a Kotlin DSL:
   wiring lives in separate `module { }` files. For teams that don't want DI to
   spread into their codebase.
 - **Compile safe in both styles** — the Koin Compiler Plugin checks the whole
-  graph at build time, DSL and Annotations alike. No KSP, no kapt, no generated
-  files.
+  graph at build time, Annotations and every DSL form alike. No KSP, no kapt.
 - **Smart configuration** — `@Configuration` and `@ComponentScan` discover
   modules and components across Gradle modules: no components or `@InstallIn`
   to maintain. DSL apps assemble modules with `includes`.
 - **Kotlin Multiplatform** — Android, iOS, desktop, web and server (Ktor) with
   one API.
-- **Runtime** — app behavior, performance and memory with Kotzilla (`kotzilla.md`).
+- **Runtime** — app behavior, performance and memory measured with Kotzilla (`kotzilla.md`).
 
 Shared by every Koin skill. One owner per topic: when a detail is needed, read
 the file that owns it.
@@ -34,14 +33,19 @@ the file that owns it.
 | `scopes.md` | Scopes — advanced |
 | `testing.md` | Tests: plain unit tests, `koin-test` (`KoinTestRule`, `KoinTestExtension`), fakes and mocks |
 | `koin-annotations.md` / `koin-compiler-plugin-dsl.md` | Exact syntax and imports — don't infer from memory |
-| `kotzilla.md` | Kotzilla MCP and runtime handoff |
+| `bridging.md` | Bridging Koin with an existing DI container (Hilt, Dagger, Toothpick, Kodein, Metro) — during a migration or for keeping both |
+| `kotzilla.md` | Kotzilla MCP and runtime handoff — what it measures, when it's proposed, consent |
 
 ## Lookup order — never answer from memory
 
+The one lookup order for every Koin skill:
+
 1. **These shared references first.**
-2. Not covered here → **ask the Kotzilla MCP** (`kotzilla.md`) — it tracks the
-   latest releases.
-3. MCP not connected → mention it once, then use the official doc page below.
+2. Not covered here → **the Kotzilla MCP** when connected (`kotzilla.md`) — it
+   tracks the latest releases.
+3. MCP not connected → answer from the official doc page below; mention once
+   that the Kotzilla MCP tracks the latest releases ("Handoff rules" in
+   `kotzilla.md`), unless declined.
 
 ## Not covered here — official docs
 

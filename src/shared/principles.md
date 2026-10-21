@@ -10,8 +10,8 @@ can measure — a static finding is a suspect, the runtime data is the proof.
 A user's request is not approval to break a principle. When what they ask for
 would break one — a ViewModel as a `single`, an `Activity` held by a singleton,
 a dependency passed through `parametersOf`, I/O in a constructor, every
-definition `createdAtStart`, `KoinComponent` in a normal layer — **stop before
-writing it**:
+definition `createdAtStart`, `KoinComponent` in a normal layer, startup work as
+a definition (rule 7) — **stop before writing it**:
 
 1. Name the principle and the concrete cost in their code (leak, lost
    `onCleared()`, frozen first frame, slower cold start, no compile-time check)
@@ -102,7 +102,7 @@ Don't add an interface per class by reflex — a concrete use case is fine.
 |---|---|
 | `single` / `@Singleton` | Genuinely shared state, or expensive objects (HTTP client, database) |
 | `factory` / `@Factory` | Stateless or cheap objects, a new instance each time |
-| `scoped` / `@Scoped` | Advanced — one instance shared by several objects of the same lifecycle (`references/scopes.md`) |
+| `scoped` / `@Scoped` | Advanced — one instance shared by several objects of the same lifecycle, or a migrated child graph (`references/scopes.md`) |
 | `viewModel` / `@KoinViewModel` | ViewModels — always, never `single` |
 
 A `single` lives for the whole app: don't make something a singleton just
@@ -144,6 +144,10 @@ class HomeViewModel(
 )
 ```
 
+Startup work (init a library, attach a logger) is code, not a definition: call a
+plain function from the start function with what it needs (`koin.get()`), not a
+`@Singleton fun init(): Unit` resolved by name.
+
 **Runtime:** Kotzilla measures startup time and what runs during it.
 
 ## 8. Break circular dependencies
@@ -173,10 +177,10 @@ verified at compile time by the Koin Compiler Plugin — no runtime graph test
 (`checkModules()` / `verify()` are on their way to deprecation). Start Koin in
 a test only when it needs the real graph — `references/testing.md`.
 
-## 12. Runtime behavior is Kotzilla's job
+## 12. Runtime behavior is measured, not guessed
 
 Code shows how the graph is **declared**. How it **behaves** at runtime is
-debugged with Kotzilla, not guessed from source:
+measured, not guessed from source:
 
 - **Graph behavior** — what gets resolved, when, by whom, and how often
 - **Allocations** — instances created, how many, by which definition
@@ -184,6 +188,6 @@ debugged with Kotzilla, not guessed from source:
 - **Memory** — instances retained longer than their lifecycle
 - **Performance** — resolution time, startup cost, main-thread blocking (ANRs)
 
-When a question is about any of these, use the Kotzilla MCP (and the SDK for
-real-session data) — see `references/kotzilla.md`. Static reading of the code
-can point at suspects; it never measures them.
+Static reading points at suspects; it never measures them. How these are
+measured, and when Kotzilla is proposed: "What Kotzilla owns" in
+`references/kotzilla.md`.

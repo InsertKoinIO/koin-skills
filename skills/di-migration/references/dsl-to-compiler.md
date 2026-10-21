@@ -3,39 +3,47 @@
 > **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
-1. [Why Migrate](#why-migrate)
-2. [Core DSL Mapping](#core-dsl-mapping)
-3. [Gradle Setup](#gradle-setup)
-4. [Singleton and Factory](#singleton-and-factory)
-5. [ViewModel](#viewmodel)
-6. [Qualifiers and Named](#qualifiers-and-named)
-7. [Scopes](#scopes)
-8. [Bindings (Interface → Implementation)](#bindings)
-9. [Parameters](#parameters)
-10. [Module Composition](#module-composition)
-11. [KMP Modules](#kmp-modules)
-12. [Compose Integration](#compose-integration)
-13. [Mixing Old and New DSL](#mixing-old-and-new-dsl)
-14. [Compile-Time Safety](#compile-time-safety)
-15. [Common Pitfalls](#common-pitfalls)
+1. [Progressive Migration](#progressive-migration)
+2. [Why Convert (optional)](#why-convert-optional)
+3. [Core DSL Mapping](#core-dsl-mapping)
+4. [Gradle Setup](#gradle-setup)
+5. [Singleton and Factory](#singleton-and-factory)
+6. [ViewModel](#viewmodel)
+7. [Qualifiers and Named](#qualifiers-and-named)
+8. [Scopes](#scopes)
+9. [Bindings (Interface → Implementation)](#bindings)
+10. [Parameters](#parameters)
+11. [Module Composition](#module-composition)
+12. [KMP Modules](#kmp-modules)
+13. [Compose Integration](#compose-integration)
+14. [Mixing Old and New DSL](#mixing-old-and-new-dsl)
+15. [Compile-Time Safety](#compile-time-safety)
+16. [Common Pitfalls](#common-pitfalls)
 
 ---
 
-## Why Migrate
+## Progressive Migration
 
-The Koin Compiler Plugin transforms the **Compiler Plugin DSL** (`single<T>()`, `factory<T>()`) at
-compile time, giving you:
+1. **Whole project, once (Step 3)** — Compiler Plugin + BOM. Every DSL form —
+   Classic, Constructor, Compiler Plugin DSL — is now compile checked
+   (`references/rules.md` §6). This is the compile-safety step; the project can
+   stop here, in its current form.
+2. **Optional, module by module (loop)** — on the user's choice, convert each
+   module's definitions to Compiler Plugin DSL, validated before the next. Old
+   and new forms coexist meanwhile ("Mixing Old and New DSL").
 
-- **Compile-time verification** — missing or circular dependencies caught at build time, not at runtime
-- **No manual `get()` wiring** — the compiler resolves constructor parameters automatically from `single<T>()`
-- **No generated files** — inline transformation during Kotlin compilation
-- **No annotations needed on classes** — your classes stay clean, all DI wiring stays in `module { }` blocks
-- **Same module structure** — `val myModule = module { }` stays, just with safer syntax
-- **Safer refactoring** — renaming a constructor parameter triggers a compile error, not a runtime crash
-- **Full KMP support** — all targets with a single plugin declaration
+Nothing is rewritten in place in one pass.
 
-The key insight: you keep the DSL module approach but replace `singleOf(::Class)` or
-`single { Class(get()) }` with `single<Class>()`. The compiler plugin does the rest.
+## Why Convert (optional)
+
+Adding the Compiler Plugin already checks every form. Converting to the
+**Compiler Plugin DSL** (`single<T>()`, `factory<T>()`) is a style choice:
+
+- **No manual `get()` wiring** — constructor parameters resolved from `single<T>()`
+- **Cycle detection through constructors** — a cycle between definitions is reported at build time
+- **Same module structure** — `val myModule = module { }` stays, only the definitions change
+
+Default: keep the project's current form; mention conversion as an option.
 
 Versions: `references/rules.md` §3.
 
@@ -80,27 +88,6 @@ dependencies {
 
 Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
-
-### How it works
-
-The Compiler Plugin intercepts `single<T>()` calls during Kotlin compilation and transforms
-them into resolved constructor calls:
-
-```kotlin
-// What you write:
-val myModule = module {
-    single<MyService>()
-}
-
-// What the compiler plugin transforms it into:
-val myModule = module {
-    buildSingle(MyService::class, null) { scope, params ->
-        MyService(scope.get(), scope.getOrNull())
-    }
-}
-```
-
-No generated files. No annotation processing. Just compile-time transformation.
 
 ## Singleton and Factory
 
@@ -270,7 +257,11 @@ val dispatcherModule = module {
 
 ## Scopes
 
-### Custom scopes
+### Android Scope Archetypes
+
+Try an archetype first (`activityScope { }`, `fragmentScope { }`, `viewModelScope { }`) — "Choose the scope" in `references/scopes.md`.
+
+### Custom scopes — when no archetype fits
 
 ```kotlin
 // BEFORE: Old DSL
@@ -298,10 +289,6 @@ val scope = getKoin().createScope<UserSession>("session_id")
 val manager = scope.get<SessionManager>()
 scope.close()
 ```
-
-### Android Scope Archetypes
-
-`references/scopes.md`.
 
 ## Bindings
 
@@ -365,8 +352,9 @@ val module = module {
 // Usage: get<Notification> { parametersOf("title") }
 ```
 
-`@InjectedParam` is the **only annotation needed on classes** in the Compiler Plugin DSL approach.
-It tells the compiler "this parameter comes from `parametersOf()`, not from the graph."
+`@InjectedParam` and `@Named` / `@Qualifier` are the only annotations needed on classes in the
+Compiler Plugin DSL approach. `@InjectedParam` tells the compiler "this parameter comes from
+`parametersOf()`, not from the graph."
 
 ### Nullable dependencies
 
@@ -460,26 +448,28 @@ No change on the Compose side — the modules change, not the call sites (`refer
 
 ## Mixing Old and New DSL
 
-Migration can be incremental. Old and new DSL syntax coexist in the same module:
+Conversion can be incremental. Old and new DSL syntax coexist in the same module:
 
 ```kotlin
 val myModule = module {
-    // Already migrated — reified type (compiler-validated)
+    // Converted — Compiler Plugin DSL
     single<UserRepository>()
     factory<DetailPresenter>()
     viewModel<MainViewModel>()
 
-    // Not yet migrated — old lambda syntax (still works)
+    // Not yet converted — Classic DSL, compile checked too
     single { OkHttpClient.Builder().build() }
     single { Retrofit.Builder().client(get()).baseUrl(URL).build() }
 }
 ```
 
-Recommended migration order:
+Conversion order, when the user chose to convert:
 1. Start with leaf classes (simple constructors, no custom logic)
-2. Move to ViewModels (biggest compile-safety win)
+2. Move to ViewModels
 3. Then repositories and data layer
-4. Keep lambda syntax for third-party types and builder patterns (these can't use reified type)
+4. Third-party types and builders → function builder `single { create(::buildX) }`
+   (`references/rules.md` §1); classic lambda only for a custom expression — it's
+   compile-checked too
 
 ## Parameter Resolution
 
@@ -507,7 +497,7 @@ val module = module {
 
 ## Compile-Time Safety
 
-The Compiler Plugin validates your Compiler Plugin DSL at 3 levels:
+The Compiler Plugin checks every DSL form, Classic included (`references/rules.md` §6).
 
 ### What gets validated
 
@@ -523,10 +513,12 @@ The Compiler Plugin validates your Compiler Plugin DSL at 3 levels:
 
 ### Error messages
 
-Missing dependencies produce standard Kotlin compiler errors:
+Missing dependencies are Kotlin compiler errors with a `[KOIN-…]` code:
 
 ```
-e: Missing definition for type 'ApiService' required by 'UserRepository'
+e: [Koin][KOIN-D001] Missing dependency: com.acme.ApiService
+  required by: com.acme.UserRepository (parameter 'api')
+  in module: com.acme.dataModule
 ```
 
 ### Runtime verification
@@ -542,7 +534,7 @@ is in place.
 ```kotlin
 // WRONG — constructor reference syntax is NOT supported by the compiler plugin
 val module = module {
-    single(::MyService)  // Will NOT be transformed
+    single(::MyService)  // not supported
 }
 
 // RIGHT — use reified type parameter
@@ -586,26 +578,25 @@ val module = module {
 
 Without `id("io.insert-koin.compiler.plugin")`, Compiler Plugin DSL code (`single<T>()`,
 `create(::T)`, `startKoin<App>`…) compiles but **fails at runtime** with
-`NotImplementedError` — these functions are stubs the plugin replaces at build
-time. Apply the plugin in every Gradle module that declares Koin definitions
+`NotImplementedError` — they need the plugin. Apply the plugin in every Gradle module that declares Koin definitions
 (`references/gradle.md`).
 
-### 5. Mixing scopes incorrectly
+### 5. ViewModel declared in its own scope without the scope factory
+
+`viewModel<T>()` inside `viewModelScope { }` is valid — it needs
+`options(viewModelScopeFactory())` at start (`references/scopes.md`):
 
 ```kotlin
-// WRONG — viewModel<T>() inside a scope block
 val module = module {
-    scope<UserSession> {
-        viewModel<SessionViewModel>()  // ViewModels should be top-level
+    viewModelScope {
+        scoped<SessionCache>()
+        viewModel<SessionViewModel>()
     }
 }
 
-// RIGHT — use scoped<T>() inside scope blocks, viewModel<T>() at top level
-val module = module {
-    viewModel<SessionViewModel>()  // Top-level
-    scope<UserSession> {
-        scoped<SessionManager>()
-    }
+startKoin {
+    options(viewModelScopeFactory())
+    modules(module)
 }
 ```
 

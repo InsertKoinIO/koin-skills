@@ -21,6 +21,36 @@ logger): `references/rules.md` §5. Where to start it, per project type:
 | Code before `Application.onCreate()` (ContentProvider) | `koin-androidx-startup` — "Other Android components" below |
 | SDK / library | Isolated context (`koinApplication { }`), never `startKoin` — "Isolated context" below |
 
+### Values known at startup
+
+A value the platform hands over when the app starts — what a Dagger
+`@BindsInstance`, a `@Component.Factory` argument or a Metro
+`@DependencyGraph.Factory` `@Provides` parameter carries. It's not a
+definition: give it to Koin in `startKoin`.
+
+| Value | In `startKoin { }` | Consumer |
+|---|---|---|
+| Android `Context` / `Application` | `androidContext(this@MainApplication)` | Plain `Context` / `Application` parameter |
+| Any other object (platform flags, a resource id, a config) | `koin.declare(value)` — qualified: `koin.declare(value, qualifier<Q>())` | `@Provided` parameter (+ the qualifier annotation) |
+| A configuration value (properties) | `properties(mapOf("api.url" to url))` — file / environment loaders: Properties in `references/index.md` | `@Property("api.url")` parameter — file / environment values are `String`s |
+
+```kotlin
+// KMP — commonMain: each platform passes its values to initApp()
+@KoinApplication object KoinApp
+
+fun initApp(appConfig: AppConfig, platformConfig: KoinAppDeclaration? = null) =
+    startKoin<KoinApp> {
+        koin.declare(appConfig)                                 // consumer: @Provided appConfig: AppConfig
+        platformConfig?.invoke(this)
+    }
+
+// androidMain — Application.onCreate()
+initApp(appConfig = AppConfig(debug = BuildConfig.DEBUG)) {
+    androidContext(this@MainApplication)
+    koin.declare(BuildConfig.API_KEY, qualifier<ApiKey>())   // consumer: @Provided @ApiKey key: String
+}
+```
+
 ### Compose app start
 
 `KoinApplication()` (composable) starts Koin from Compose. Use it only when
@@ -42,9 +72,11 @@ fun App() {
 }
 
 // Annotations configuration
+@KoinApplication object KoinApp
+
 @Composable
 fun App() {
-    KoinApplication(configuration = koinConfiguration<App>()) {   // org.koin.plugin.module.dsl.koinConfiguration
+    KoinApplication(configuration = koinConfiguration<KoinApp>()) {   // org.koin.plugin.module.dsl.koinConfiguration
         MainScreen()
     }
 }
@@ -131,6 +163,12 @@ fun DetailScreen(id: String, vm: DetailViewModel = koinViewModel { parametersOf(
   down to child composables, not the ViewModel.
 - **Runtime parameters** — `koinViewModel { parametersOf(…) }` and
   `koinInject { parametersOf(…) }`, same as on Android.
+- **Several ViewModels of one type on one screen** (a list where each item has
+  its own) — give each a key: `koinViewModel<ItemViewModel>(key = id) {
+  parametersOf(id) }`. Without a key, all items share the first ViewModel and
+  its parameters. Migrating: keep every `key =` the source call site had.
+- **Qualified dependency** — `koinInject<String>(qualifier<BaseUrl>())` for a
+  custom `@Qualifier` annotation `BaseUrl`.
 - **Scoped composables** — advanced, see `references/scopes.md`.
 
 ## Navigation
@@ -225,7 +263,7 @@ KMP background work: no Koin API yet.
 
 Start Koin with the Ktor plugin. Both forms — DSL `modules(...)` and
 Annotations `withConfiguration<T>()` — are compile-time checked by the Compiler
-Plugin since 1.2.x.
+Plugin.
 
 ```kotlin
 fun Application.module() {

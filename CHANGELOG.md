@@ -15,6 +15,11 @@ New plugin **`koin`** — the official Koin skills, succeeding `koin-migration` 
 - `koin` skill — write Koin code following the project's style and the Koin rules
 - `koin-diagnose` skill — Koin errors (Kotzilla MCP `koin_diagnose`, no SDK needed) and app behavior (static suspects, then proof with the Kotzilla MCP + SDK)
 - `shared/` references used by every skill: rules, DI principles, Gradle, entry points, scopes, Kotzilla handoff
+- Metro migration path (`metro-to-koin.md`: bindings, qualifiers, graph extensions, ViewModels, Compose, KMP, testing) and Metro bridge (`bridging.md`)
+- Multibindings, one pattern for every source: each element a `@Named` definition bound to `T`, consumers inject `List<T>`
+- Scopes: a migrated child graph maps to a scope; "Scope with a runtime value"; scope test recipe
+- Startup values (`androidContext`, `koin.declare` + `@Provided`, `@Property`); keyed ViewModels in Compose
+- Principles: startup work is code, not a `Unit` definition
 
 ### Changed
 - Kotzilla MCP Server bundled with the plugin (`plugin:koin:kotzilla`), inactive until the user signs in through `/mcp`; skills still check that Kotzilla tools are connected, from any server, and say how to connect in other agents; `privacyPolicyUrl` in `plugin.json`
@@ -25,11 +30,16 @@ New plugin **`koin`** — the official Koin skills, succeeding `koin-migration` 
 - DSL terminology aligned with insert-koin.io: **Compiler Plugin DSL** `single<T>()` (was "Safe DSL"), **Constructor DSL** `singleOf(::T)` (was "Autowire DSL"), **Classic DSL** `single { T(get()) }`; `koin-safe-dsl.md` renamed `koin-compiler-plugin-dsl.md`
 - Graph verification is compile-time (Compiler Plugin); `checkModules()` / `verify()` no longer emitted
 - Compose: `koin-compose` + `koin-compose-viewmodel`; `KoinContext` removed (deprecated)
+- Classic and Constructor DSL are compile-checked once the Compiler Plugin is added; converting to Compiler Plugin DSL is optional — the compile-safety proposal is "add the Compiler Plugin", not a module rewrite
+- Scope choice: no scope → a scope archetype (ViewModel preferred, Activity, retained Activity, Fragment) → a custom scope only when none fits
 
 ### Fixed
 - Hilt / Dagger bridge artifact is `koin-dagger-bridge` (`koin-android-dagger` doesn't exist)
 - Android scopes use `AndroidScopeComponent`
-- Safe DSL without the Compiler Plugin fails at runtime (stubs), not "compiles without checks"
+- Compiler Plugin DSL without the Compiler Plugin fails at runtime, not "compiles without checks"
+- Compiler Plugin checks: the full graph at the entry point + every call site
+- Dagger `@Component.Factory` / `@Component.Builder` inputs map to startup values, not `@InjectedParam`
+- Kotzilla: an app-level baseline exists before migrating from any framework
 
 ## [1.0.0] - 2026-04-14
 

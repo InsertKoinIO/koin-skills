@@ -18,20 +18,24 @@ can be **reused without changes** in Koin annotation output.
 | Symbol                                                                                              | Import                                                | Notes                                                            |
 |-----------------------------------------------------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------------------|
 | `@Module`, `@Configuration`, `@ComponentScan`                                                       | `org.koin.core.annotation.*`                          | Module declaration triad                                         |
-| `@Singleton`, `@Single`, `@Factory`, `@KoinViewModel`, `@KoinWorker`                                | `org.koin.core.annotation.*`                          | Binding annotations                                              |
+| `@Singleton`, `@Single`, `@Factory`, `@KoinViewModel`                                               | `org.koin.core.annotation.*`                          | Binding annotations                                              |
+| `@KoinWorker`                                                                                       | `org.koin.android.annotation.KoinWorker`              | WorkManager Worker (Android)                                     |
 | `@KoinApplication`                                                                                  | `org.koin.core.annotation.*`                          | Application entry point                                          |
-| `@InjectedParam`, `@Named`, `@Property`, `@Qualifier`                                               | `org.koin.core.annotation.*`                          | Parameter / qualifier annotations                                |
+| `@InjectedParam`, `@Named`, `@Property`, `@Qualifier`, `@Provided`                                  | `org.koin.core.annotation.*`                          | Parameter / qualifier annotations                                |
 | `@Scope`, `@Scoped`                                                                                 | `org.koin.core.annotation.*`                          | Custom scope annotations                                         |
-| `@ActivityScope`, `@ActivityRetainedScope`, `@FragmentScope`, `@ViewModelScope`                     | `org.koin.core.annotation.*`                          | Android scope archetypes                                         |
+| `@ViewModelScope`                                                                                   | `org.koin.core.annotation.*`                          | ViewModel scope archetype (common)                               |
+| `@ActivityScope`, `@ActivityRetainedScope`, `@FragmentScope`                                        | `org.koin.android.annotation.*`                       | Android scope archetypes                                         |
 | `startKoin<App>`, `koinApplication<App>`, `koinConfiguration<App>`                                  | `org.koin.plugin.module.dsl.*`                        | **Compiler-Plugin entry points** — reified, trigger auto-discovery. NOT `org.koin.core.context.startKoin` |
-| `KoinApplication.module<T>()`, `KoinApplication.modules(vararg KClass)`                             | `org.koin.plugin.module.dsl.*`                        | **Annotations-only escape hatch** — use when *not* relying on `@Configuration` auto-discovery (variant modules, conditional loading, test overrides). With `@Configuration` this is unnecessary. Not for Compiler Plugin DSL output. |
+| `module<T>()`, `modules(A::class, B::class)` inside `startKoin { }`                                 | `org.koin.plugin.module.dsl.*`                        | **Annotations-only escape hatch** — use when *not* relying on `@Configuration` auto-discovery (variant modules, conditional loading, test overrides). With `@Configuration` this is unnecessary. Not for Compiler Plugin DSL output. |
 | `koinViewModel()`                                                                                   | `org.koin.compose.viewmodel.koinViewModel`          | Compose ViewModel injection                                      |
 | `koinInject()`                                                                                      | `org.koin.compose.koinInject`                         | Compose generic injection                                        |
 | `androidContext`, `androidLogger`                                                                   | `org.koin.android.ext.koin.*`                         | Android startKoin DSL                                            |
 | `workManagerFactory`                                                                                | `org.koin.androidx.workmanager.koin.workManagerFactory` | WorkManager startKoin DSL                                      |
 
 **Avoid:** `org.koin.android.annotation.KoinViewModel` (legacy KSP location).
-In Koin 4.x every annotation lives under `org.koin.core.annotation.*`.
+In Koin 4.x the annotations live under `org.koin.core.annotation.*`, except the
+Android-only ones (`@KoinWorker`, `@ActivityScope`, `@ActivityRetainedScope`,
+`@FragmentScope`) under `org.koin.android.annotation.*`.
 
 ## Bindings
 
@@ -51,15 +55,16 @@ In Koin 4.x every annotation lives under `org.koin.core.annotation.*`.
 @KoinWorker class SyncWorker(ctx: Context, params: WorkerParameters, repo: Repo) : CoroutineWorker(ctx, params)
 ```
 
-**Auto-bind**: when a `@Singleton` / `@Factory` class implements a single
-interface, the binding is registered automatically — do not emit explicit
-`bind`. Only set `binds` when the class implements multiple interfaces and
-you want to expose a specific subset:
+**Auto-bind**: a `@Singleton` / `@Factory` class is bound automatically to
+every interface and abstract class it directly extends (framework types like
+`ViewModel` and `KoinComponent` excluded) — do not emit explicit `binds`. Set
+`binds` only to expose a specific subset:
 
 ```kotlin
 @Singleton class RepositoryImpl : Repository, Persistable
-// → not auto-bound to either interface — explicit binds needed:
+// → bound to RepositoryImpl, Repository and Persistable
 @Singleton(binds = [Repository::class]) class RepositoryImpl : Repository, Persistable
+// → RepositoryImpl and Repository only
 ```
 
 ## Modules
@@ -134,7 +139,8 @@ the compiler plugin's discovery wiring is bypassed.
 | `@InjectedParam`          | Constructor param              | Runtime values via `parametersOf(...)` at call site |
 | `@Named("auth")`          | Class or param                 | String qualifier                      |
 | `@Qualifier`              | On your own annotation         | Custom type-safe qualifier            |
-| `@Property("api.url")`    | Constructor param              | Inject Koin property value            |
+| `@Property("api.url")`    | Constructor param              | Inject Koin property value (file / environment values are `String`s) |
+| `@Provided`               | Param (also class, function)   | A value given at runtime (`declare`), not by a definition. Skipped by the compile-time check: never declared → runtime failure. On a class: every use of that type is externally provided |
 
 ```kotlin
 @Qualifier annotation class Auth
@@ -142,7 +148,15 @@ the compiler plugin's discovery wiring is bypassed.
 
 @Factory class Connection(@InjectedParam val url: String)
 // at call site: get<Connection> { parametersOf("https://...") }
+
+@Singleton class FeatureFlags(@Provided private val config: AppConfig)
+// at start: startKoin<App> { koin.declare(config) }
 ```
+
+`@InjectedParam` is a value per resolution; `@Provided` a value declared once
+for the app or a scope ("Values known at startup" in
+`references/entry-points.md`, "Scope with a runtime value" in
+`references/scopes.md`).
 
 ## Scopes
 
@@ -182,9 +196,11 @@ class FeatureCoordinator(
 
 ```kotlin
 import org.koin.plugin.module.dsl.module
+import org.koin.plugin.module.dsl.modules
 
 startKoin {
-    modules(module<MyModule>())   // reified helper — for conditional/test wiring
+    module<MyModule>()                          // one module — conditional/test wiring
+    modules(MyModule::class, OtherModule::class) // several
 }
 ```
 

@@ -22,24 +22,18 @@
 
 Do **not** rewrite existing Kodein modules in place. Instead:
 
-1. Set Koin up **alongside** the existing container — the `koin-setup` skill (Gradle, style, start)
+1. Set Koin up **alongside** the existing container — Step 3 (Gradle) and Step 5 (wiring) of the `di-migration` workflow
 2. Keep the existing Kodein `DI` container running for everything not yet migrated
 3. Move definitions from Kodein modules into the Koin module **one feature at a time**
 4. At each call site, swap `by instance()` / `direct.instance()` for `by inject()` / `get()` only for the bindings already moved
-5. Remove the Kodein dependency once the last binding has moved over
+5. Remove the Kodein dependency once the last binding has moved over (Step 8)
 
 This keeps the project building and runnable at every step and limits the blast radius
 of each migration commit.
 
-For Kodein-owned bindings consumed from a Koin definition during the bridging
-window, write a small Koin-scope helper that resolves from the live `DI`
-container — same shape as the `Scope.dagger<T>()` helper in `hilt-to-koin.md`,
-just delegating to Kodein's `direct.instance()` instead of `EntryPoints.get()`.
-
-**Co-locate bridge helpers in the consumer module** (Compiler Plugin DSL `module { }` for
-the feature that consumes the Kodein binding) — strict A1 verification then
-stays green and no compile-check relaxation is needed. See SKILL.md →
-"Bridging with the existing DI" for the full rationale.
+Koin definitions read bindings still owned by Kodein through a
+`Scope.kodein<T>()` helper, co-located in the consumer module —
+`references/bridging.md`.
 
 ---
 
@@ -49,18 +43,18 @@ Mappings target **Compiler Plugin DSL** (no annotations for Kodein):
 
 | Kodein Construct                     | Koin Compiler Plugin DSL Equivalent                              |
 |--------------------------------------|-------------------------------------------------------|
-| `DI { ... }` container               | `startKoin { modules(...) }`                          |
+| `DI { ... }` container               | One app `module { includes(...) }` loaded by `startKoin { modules(appModule) }` |
 | `DI.Module("name") { ... }`          | `val appModule = module { ... }`                      |
 | `bind<T>() with singleton { ... }` / `bindSingleton<T> { }` | `single<T>()`                      |
 | `bind<T>() with provider { ... }` / `bindProvider<T> { }`   | `factory<T>()`                     |
-| `bindInstance<T> { ... }`            | `single<T> { ... }` (lambda for third-party types)    |
-| `bind<T>() with scoped(scope).singleton { }` | `scope<S> { scoped<T> { ... } }`              |
+| `bindInstance<T> { ... }`            | `single { create(::buildT) }` (function builder); classic lambda only for a custom expression |
+| `bind<T>() with scoped(scope).singleton { }` | `scope<S> { scoped<T>() }`                    |
 | `bind<T>(tag = "x")`                 | `@Named("x")` on the class + `single<T>()` (reified) — always `@Named` for Kodein migrations |
 | `instance()` / `by instance()`       | `get()` / `by inject()`                               |
-| `factory<P, T>()` / `bindFactory<P, T> { }` (one runtime arg) | `factory<T> { (p: P) -> T(p, ...) }` — retrieve with `get { parametersOf(p) }` |
+| `factory<P, T>()` / `bindFactory<P, T> { }` (one runtime arg) | `@InjectedParam` on the param + `factory<T>()` — retrieve with `get { parametersOf(p) }` (destructuring lambda only for classes you can't annotate, `references/koin-compiler-plugin-dsl.md`) |
 | `multiton<P, T>()` (cached factory)  | No direct equivalent — a `single<Map<P, T>>` cache, or `single<T>` per known key |
 | `bindings.set { add(...) }` (set bindings) | Manual `List<T>` collected inside a `single<List<T>>` |
-| `subDI(parentDI) { ... }`            | Multiple modules in `startKoin { modules(parent, child) }` |
+| `subDI(parentDI) { ... }`            | Child module included by the app module (`includes(child)`); a Koin scope if the child DI had its own lifetime (`references/scopes.md`) |
 | `DIAware` interface on a class       | Constructor injection (see Retrieval below)          |
 | `androidXModule(app)`                | `androidContext(this@App)` in `startKoin { }`         |
 | `closestDI()` from Android `Context` | `getKoin()` (Android), `koinInject()` (Compose)       |
@@ -69,15 +63,16 @@ Mappings target **Compiler Plugin DSL** (no annotations for Kodein):
 
 ## Gradle Setup
 
+Step 3 — add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3. Kodein stays in place.
+
+Step 8, after the last binding moved — remove Kodein:
+
 ```kotlin
 // REMOVE
 implementation("org.kodein.di:kodein-di:<version>")
 implementation("org.kodein.di:kodein-di-framework-android-x:<version>")
 implementation("org.kodein.di:kodein-di-framework-compose:<version>")
 ```
-
-Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
-
 
 ---
 
@@ -171,8 +166,11 @@ val conn: Connection = di.direct.factory<String, Connection>()("http://...")
 **Koin** uses `@InjectedParam` and `parametersOf(...)`:
 
 ```kotlin
-@Factory
 class Connection(@InjectedParam val url: String)
+
+val connectionModule = module {
+    factory<Connection>()
+}
 
 val conn: Connection = get { parametersOf("http://...") }
 ```
@@ -189,7 +187,7 @@ For multiple runtime args, list each `@InjectedParam` parameter — order matche
 | `val r: Repo by instance()`             | `val r: Repo by inject()`       |
 | `val r: Repo = di.direct.instance()`    | `val r: Repo = get()`           |
 | `val r: Repo by instance(tag = "x")`    | `val r: Repo by inject(named("x"))` |
-| `val r: () -> Repo by provider()` (new instance per call when bound to `provider`) | `factory<Repo>()` + re-resolve on each call — needs a service locator (`KoinComponent`, `references/rules.md` §8). `Lazy<Repo>` only matches Kodein `provider()` over a `singleton` binding — semantics differ for `provider` bindings. |
+| `val r: () -> Repo by provider()` (new instance per call when bound to `provider`) | `factory<Repo>()` + a `Scope` constructor parameter, `scope.get<Repo>()` on each call — a service locator, user's OK first (`references/rules.md` §8; "Lazy and Provider" in `references/dagger-to-koin.md`). `Lazy<Repo>` only matches Kodein `provider()` over a `singleton` binding — semantics differ for `provider` bindings. |
 | `val r: Repo? by instanceOrNull()`      | `val r: Repo? by injectOrNull()` (or auto `Repo?` constructor param) |
 
 Constructor injection everywhere else — `references/principles.md` rule 1–2.
@@ -276,7 +274,7 @@ interface PlatformService
 expect fun platformService(): PlatformService
 
 val sharedModule = module {
-    single<PlatformService> { platformService() }
+    single { create(::platformService) }
 }
 
 // androidMain
@@ -310,6 +308,6 @@ val koinTestRule = KoinTestRule.create {
 }
 ```
 
-Graph verification: the **Koin Compiler Plugin's A1/A2/A3 layers** catch missing
-bindings at compile time. Don't add `checkModules { }` / `verify()` — both are on
-their way to deprecation.
+Graph verification: the **Koin Compiler Plugin** checks the full graph and the
+resolution call sites at compile time, catching missing bindings. Don't add
+`checkModules { }` / `verify()` — both are on their way to deprecation.

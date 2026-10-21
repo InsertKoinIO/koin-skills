@@ -19,8 +19,8 @@ Koin supports two styles, both compiled by the Koin Compiler Plugin:
   Prefer `@Singleton` over `@Single`.
 - **Koin DSL** — `module { }` blocks; keeps DI out of the code (no annotations
   on classes, wiring kept separate). Three forms, all compiled **and
-  compile-time checked** by the Compiler Plugin (since 1.2.x — including
-  `singleOf(::T)` and the `get()` calls inside lambdas):
+  compile-time checked** by the Compiler Plugin (including `singleOf(::T)` and
+  the `get()` calls inside lambdas):
 
   | Form | Example | Use when |
   |---|---|---|
@@ -31,8 +31,9 @@ Koin supports two styles, both compiled by the Koin Compiler Plugin:
   Pick by the **definition expression**: a plain constructor → Compiler Plugin DSL
   (with the Compiler Plugin); anything custom → function builder or classic
   lambda. Classic and Constructor DSL are valid Koin — write them when needed, and
-  don't rewrite existing code unless the user asks (`di-migration` covers
-  DSL → Compiler Plugin DSL).
+  don't rewrite existing code unless the user asks. Converting existing DSL to
+  Compiler Plugin DSL is a style choice (`di-migration`), not what makes the
+  graph compile safe — the plugin does that for every form.
 
 **The style is a project decision.** Make it explicit: state the style before
 writing code (detect it in an existing project, ask in a new one) and keep to
@@ -44,8 +45,9 @@ Within either style:
 - Types that can't be built from their constructor (Retrofit, Room, OkHttp
   builders) use a **function builder** (`references/principles.md` rule 1):
   `@Singleton fun` in a `@Module`, or `single { create(::buildX) }` in Compiler Plugin DSL.
-- **Auto-bind (Annotations)** — a `@Singleton` / `@Factory` class implementing
-  a single interface is bound to it automatically: no `binds = [...]`.
+- **Auto-bind (Annotations)** — a `@Singleton` / `@Factory` class is bound
+  automatically to every interface / abstract class it implements: no
+  `binds = [...]` unless exposing a subset.
 - Both Compiler Plugin DSL interface-binding forms are valid — don't normalize one to the
   other: `single<Impl>().bind<I>()` and `single<Impl>().withOptions { bind<I>() }`.
 - **Qualifiers** — annotations wherever a qualifier is needed: `@Named` /
@@ -56,7 +58,8 @@ Within either style:
 ## 2. Compiler Plugin recommended, Koin KSP never
 
 The Koin Compiler Plugin (`id("io.insert-koin.compiler.plugin")`) is the
-**recommended default**: it makes the graph compile safe (§6). Recommend it in
+**recommended default**: it makes the graph compile safe (§6), whatever the
+style or DSL form — adding it is a Gradle change, no module rewrite. Recommend it in
 every setup and migration, and say what it brings — but it's the user's
 choice, not a requirement. The user declines → Koin DSL without the plugin
 (constructor or classic forms, §1); Annotations need the plugin, so they're off
@@ -129,8 +132,10 @@ Safer at scale: the graph is discovered and verified by the Compiler Plugin.
 - **Missing any of the three on a root → silent runtime
   `NoDefinitionFoundException`, not a compile error.**
 - Escape hatch (variants, conditional loading, test overrides): load a module
-  explicitly with `modules(module<AppModule>())`. **Never** `AppModule().module`
-  (Koin KSP idiom, breaks the Compiler Plugin path).
+  explicitly inside `startKoin { }` with `module<AppModule>()` or
+  `modules(AppModule::class, OtherModule::class)` (both from
+  `org.koin.plugin.module.dsl`). **Never** `AppModule().module` (Koin KSP
+  idiom, breaks the Compiler Plugin path).
 
 ### DSL configuration — assembling modules
 
@@ -140,7 +145,7 @@ The graph is assembled explicitly.
 - The app module **`includes(...)`** each child module (feature / Gradle
   module); children can include their own. Included modules are optimized by
   Koin — prefer `includes` over listing every module in `startKoin`.
-- `module<T>()` is annotations-only.
+- `module<T>()` / `modules(T::class)` load annotated modules only.
 
 ### Platforms
 
@@ -153,11 +158,11 @@ The graph is assembled explicitly.
   // commonMain
   fun initApp(config: KoinAppDeclaration? = null) = startKoin {
       config?.invoke(this)
-      modules(appModule)          // Annotations style: startKoin<App> { config?.invoke(this) }
+      modules(appModule)          // Annotations style: startKoin<KoinApp> { config?.invoke(this) }
   }
 
   // androidMain — Application.onCreate()
-  initApp { androidContext(this@App) }
+  initApp { androidContext(this@MainApplication) }
   ```
 
 - **Logger** — only when needed: `androidLogger()` when starting on Android,
@@ -165,20 +170,23 @@ The graph is assembled explicitly.
 
 ### Mixing (only if the user asked for it)
 
-Each module keeps one style. Annotated and DSL modules can be loaded together
-in one `modules(...)` call.
+Each module keeps one style. Annotated and DSL modules load in the same
+`startKoin { }`: `modules(appModule)` then `module<AnnotatedModule>()`.
 
 ## 6. Graph verification is compile-time
 
-The Koin Compiler Plugin checks the graph at build time. Don't write
+The Koin Compiler Plugin checks the graph at build time, in two ways: the
+**full graph** at the Koin entry point (`startKoin` / `@KoinApplication`) and
+every **call site** (`get()`, `inject()`, `koinViewModel()`…). Don't write
 `checkModules()` / `verify()` tests — both are on their way to deprecation in
 favor of the Compiler Plugin. Without the plugin (the user's choice, §2) there
 is no compile-time check: verify by building, then running the paths that
 resolve the definitions.
 
-When the build reports a Koin compile-safety error (`[KOIN-…]`), use the
-Kotzilla MCP **Koin errors** workflow (`references/kotzilla.md` — MCP only, no
-SDK) to diagnose and fix it; the `koin-diagnose` skill runs it end to end.
+When the build reports a Koin compile-safety error (`[KOIN-…]`), fix what the
+report says. When it isn't enough, the Kotzilla MCP **Koin errors** workflow
+(`references/kotzilla.md` — MCP only, no SDK) can diagnose it — optional; the
+`koin-diagnose` skill runs it end to end.
 
 ## 7. Organize modules
 
@@ -233,16 +241,14 @@ API fits: name it a **service locator**, state the cost (the class depends on
 Koin, hidden dependencies, no compile-time check), and get an explicit OK
 before writing it. `references/principles.md` rule 2.
 
-## 9. Kotzilla for Koin knowledge and all runtime debugging
+## 9. Koin knowledge and runtime behavior
 
-Never answer Koin questions from memory. Lookup order: these shared references
-first, then the Kotzilla MCP, then the official docs (`references/index.md`).
+Never answer Koin questions from memory — lookup order in
+`references/index.md`.
 
 The Compiler Plugin makes definitions compile safe (§6); it doesn't check how
-the app behaves. **Debugging, memory, performance profiling and checking app
-behavior go through the Kotzilla MCP + SDK** — never answered from source code
-alone (`references/principles.md` rule 12). The MCP has Koin investigation
-tools for a concrete workflow (`references/kotzilla.md`).
+the app behaves. Runtime behavior is measured, not guessed: "What Kotzilla
+owns" in `references/kotzilla.md`.
 
 **Prefer MCP output over these reference files when they disagree** — the MCP
 tracks the latest releases; references are a snapshot.
