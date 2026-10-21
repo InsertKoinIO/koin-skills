@@ -1,6 +1,6 @@
 # Toothpick → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & minimum versions** — see [`koin-annotations.md`](koin-annotations.md) → "Setup" for the standard Gradle block, JSR-330 support note, and Kotlin/Koin/Compiler Plugin minimum versions. This file holds only the source-specific deltas.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)
@@ -82,23 +82,7 @@ dependencies {
 
 ### Step 2: Add Koin + Compiler Plugin
 
-```kotlin
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation("io.insert-koin:koin-core:4.2.1")
-    implementation("io.insert-koin:koin-android:4.2.1")
-    implementation("io.insert-koin:koin-annotations:4.2.1")
-
-    // If using Compose:
-    implementation("io.insert-koin:koin-androidx-compose:4.2.1")
-
-    // Testing:
-    testImplementation("io.insert-koin:koin-test-junit5:4.2.1")
-}
-```
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
 
 
 ## Scope Tree
@@ -179,19 +163,18 @@ class ActivityNavigator(private val analytics: Analytics)
 @FragmentScope
 class DetailPresenter(private val api: ApiService, private val db: AppDatabase)
 
-// Module for auto-discovery
+// Module for auto-discovery — root module of this Gradle module
 @Module
-@ComponentScan("com.myapp")
+@Configuration
+@ComponentScan("com.myapp.chat")          // focused package (references/rules.md §7)
 class AppModule
 
-// Application setup
+// Application setup — AppModule carries @Configuration and is discovered
+@KoinApplication
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
-        startKoin {
-            androidContext(this@App)
-            modules(module<AppModule>())
-        }
+        startKoin<App> { androidContext(this@App) }
     }
 }
 
@@ -201,7 +184,7 @@ class MainActivity : AppCompatActivity() {
 }
 
 // Fragment — scoped injection
-class DetailFragment : Fragment(), KoinScopeComponent {
+class DetailFragment : Fragment(), AndroidScopeComponent {
     override val scope: Scope by fragmentScope()
     private val presenter: DetailPresenter by inject()
 }
@@ -211,7 +194,7 @@ Key differences:
 - Toothpick's hierarchical lookup (child sees parent bindings) → Koin `@Singleton` bindings are globally visible
 - Scoped bindings use `@Scope(T::class)` and are only accessible within that scope
 - No manual `inject(this, scope)` call — Koin delegates handle injection automatically
-- No manual `closeScope()` — `KoinScopeComponent` ties scope to Android lifecycle
+- No manual `closeScope()` — `AndroidScopeComponent` + `activityScope()` / `fragmentScope()` ties the scope to the Android lifecycle
 
 ## Module Conversion
 
@@ -243,21 +226,10 @@ class RetrofitProvider @Inject constructor(
 }
 ```
 
+AFTER: the same `@Module` with `@Singleton fun` builders as Dagger — "Module
+with @Provides" in `references/dagger-to-koin.md`. Then:
+
 ```kotlin
-// AFTER: Koin @Module with annotated functions
-@Module
-class NetworkModule {
-    @Singleton
-    fun provideOkHttp(): OkHttpClient = OkHttpClient.Builder().build()
-
-    @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit =
-        Retrofit.Builder()
-            .client(client)
-            .baseUrl(BASE_URL)
-            .build()
-}
-
 // ApiServiceImpl can be annotated directly since you own it
 @Singleton
 class ApiServiceImpl(private val retrofit: Retrofit) : ApiService
@@ -395,7 +367,7 @@ class ChatActivity : AppCompatActivity() {
 @Scope(ChatActivity::class)
 class ChatManager(private val api: ApiService)
 
-class ChatActivity : AppCompatActivity(), KoinScopeComponent {
+class ChatActivity : AppCompatActivity(), AndroidScopeComponent {
     override val scope: Scope by activityScope()
     private val chatManager: ChatManager by inject()
     // No onDestroy cleanup needed — activityScope() handles it

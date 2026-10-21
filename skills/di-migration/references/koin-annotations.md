@@ -1,44 +1,12 @@
 # Koin Annotations + Compiler Plugin — Reference
 
-Concrete cheat sheet for the annotations output used by Hilt / Dagger / Toothpick / Koin-KSP migrations. Cross-link target for the per-source references — they map source constructs to entries here, this file holds the Koin side.
+Concrete cheat sheet for **Koin Annotations + Compiler Plugin** code. Shared by every Koin skill (setup, core, migration, diagnose) — exact imports and syntax live here; don't infer them from memory.
 
 For depth, see https://insert-koin.io.
 
-## Setup (shared by every migration to annotations output)
+## Setup
 
-**Minimum versions** (also enforced by SKILL.md rule #3):
-
-| Component             | Minimum     |
-|-----------------------|-------------|
-| Kotlin                | `2.3.20`    |
-| Koin                  | `4.2.1`     |
-| Koin Compiler Plugin  | `1.0.0-RC1` |
-
-Always try to resolve newer versions at Step 3 — minimums, not targets.
-
-**Standard Gradle block** (per-source references add only the deltas):
-
-```kotlin
-// build.gradle.kts
-plugins {
-    id("io.insert-koin.compiler.plugin") version "1.0.0-RC1"
-}
-
-dependencies {
-    implementation(platform("io.insert-koin:koin-bom:4.2.1"))
-    implementation("io.insert-koin:koin-core")
-    implementation("io.insert-koin:koin-annotations")          // BOM resolves correct version
-    implementation("io.insert-koin:koin-android")              // Android
-    implementation("io.insert-koin:koin-androidx-compose")     // Compose
-    implementation("io.insert-koin:koin-androidx-workmanager") // Workers
-}
-```
-
-**Never pin `koin-annotations` to a 2.x version** — the 2.x line is the
-KSP-processed annotations artifact and is **incompatible** with the Compiler
-Plugin path. Let the BOM resolve it. Likewise, the `com.google.devtools.ksp`
-plugin and `koin-ksp-compiler` dependency must be **absent** — the Compiler
-Plugin reads annotations directly, no KSP processor is involved.
+Gradle and versions: `references/gradle.md`. Policy (style choice, configuration): `references/rules.md`.
 
 **JSR-330 support**: the Koin Compiler also handles `jakarta.inject.*` and
 `javax.inject.*` directly — `@Inject`, `@Singleton`, `@Named`, `@Qualifier`
@@ -57,9 +25,8 @@ can be **reused without changes** in Koin annotation output.
 | `@ActivityScope`, `@ActivityRetainedScope`, `@FragmentScope`, `@ViewModelScope`                     | `org.koin.core.annotation.*`                          | Android scope archetypes                                         |
 | `startKoin<App>`, `koinApplication<App>`, `koinConfiguration<App>`                                  | `org.koin.plugin.module.dsl.*`                        | **Compiler-Plugin entry points** — reified, trigger auto-discovery. NOT `org.koin.core.context.startKoin` |
 | `KoinApplication.module<T>()`, `KoinApplication.modules(vararg KClass)`                             | `org.koin.plugin.module.dsl.*`                        | **Annotations-only escape hatch** — use when *not* relying on `@Configuration` auto-discovery (variant modules, conditional loading, test overrides). With `@Configuration` this is unnecessary. Not for Safe DSL output. |
-| `koinViewModel()`                                                                                   | `org.koin.androidx.compose.koinViewModel`             | Compose ViewModel injection                                      |
+| `koinViewModel()`                                                                                   | `org.koin.compose.viewmodel.koinViewModel`          | Compose ViewModel injection                                      |
 | `koinInject()`                                                                                      | `org.koin.compose.koinInject`                         | Compose generic injection                                        |
-| `KoinContext`                                                                                       | `org.koin.compose.KoinContext`                        | Wraps the Compose tree                                           |
 | `androidContext`, `androidLogger`                                                                   | `org.koin.android.ext.koin.*`                         | Android startKoin DSL                                            |
 | `workManagerFactory`                                                                                | `org.koin.androidx.workmanager.koin.workManagerFactory` | WorkManager startKoin DSL                                      |
 
@@ -129,10 +96,9 @@ via `@Module(includes = [...])` are pulled in transitively and **don't need
 @ComponentScan("com.acme.api")
 class ApiModule
 
-@Module
+@Module(includes = [ApiModule::class]) // pulls ApiModule into this subtree
 @Configuration                         // root — discovered by @KoinApplication
 @ComponentScan("com.acme.feature.foo")
-@Module(includes = [ApiModule::class]) // pulls ApiModule into this subtree
 class FooFeatureModule
 ```
 
@@ -151,7 +117,6 @@ class App : Application() {
         super.onCreate()
         startKoin<App> {
             androidContext(this@App)
-            androidLogger()
             // no modules(...) — Compiler Plugin auto-discovers triad-tagged modules
         }
     }
@@ -197,23 +162,7 @@ the compiler plugin's discovery wiring is bypassed.
 
 ## Retrieval
 
-From an Android entry point that Koin doesn't construct (Activity / Fragment / Service):
-
-```kotlin
-class MyActivity : AppCompatActivity() {
-    private val repo: Repository by inject()
-    private val viewModel: HomeViewModel by viewModel()
-}
-```
-
-From Compose:
-
-```kotlin
-@Composable fun Screen() {
-    val repo = koinInject<Repository>()
-    val vm = koinViewModel<HomeViewModel>()
-}
-```
+Entry points (Android, Compose, …): `references/entry-points.md`.
 
 From inside another Koin-managed class — **don't use `KoinComponent`**, use
 constructor injection. The compiler resolves every parameter:
@@ -232,7 +181,7 @@ class FeatureCoordinator(
 ## Manual module retrieval (escape hatch)
 
 ```kotlin
-import org.koin.ksp.generated.module    // generated extension property — NOT for normal use
+import org.koin.plugin.module.dsl.module
 
 startKoin {
     modules(module<MyModule>())   // reified helper — for conditional/test wiring
@@ -243,8 +192,8 @@ Default flow goes through `@KoinApplication` + `@Configuration` and never needs
 this. Use only when you have variant-specific or test-only modules to inject
 manually.
 
-## What this skill does NOT cover
+## Not covered here
 
-- Full Koin DSL — see `references/koin-safe-dsl.md` (when added) or the official docs
-- Multiplatform setup beyond what migrations need — see https://insert-koin.io/docs/quickstart/kmp
+- Safe DSL output — see `references/koin-safe-dsl.md`
+- Multiplatform setup in depth — see https://insert-koin.io/docs/quickstart/kmp
 - Property file loading, dynamic plugins, ktor integration — see https://insert-koin.io

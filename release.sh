@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publish a GitHub release from the current tag (or a newly created one),
-# uploading the .skill bundle and the plugin .zip as release assets.
+# uploading the .skill bundles and the plugin .zip as release assets.
 #
 # Usage:
 #   ./release.sh                  # use version from .claude-plugin/plugin.json
@@ -53,9 +53,14 @@ fi
 # --- build ------------------------------------------------------------------
 
 ./build.sh >/dev/null
-SKILL="$ROOT/di-migration-skill.skill"
-PLUGIN="$ROOT/koin-migration-plugin.zip"
-[[ -f "$SKILL"  ]] || { echo "error: $SKILL not built"  >&2; exit 1; }
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "error: ./build.sh changed skills/ — commit the generated skills before releasing" >&2
+  git status --short >&2
+  exit 1
+fi
+SKILLS=("$ROOT"/build/*-skill.skill)
+PLUGIN="$ROOT/build/koin-plugin.zip"
+[[ -f "${SKILLS[0]}" ]] || { echo "error: no .skill bundles built" >&2; exit 1; }
 [[ -f "$PLUGIN" ]] || { echo "error: $PLUGIN not built" >&2; exit 1; }
 
 # --- tag --------------------------------------------------------------------
@@ -92,7 +97,7 @@ fi
 if gh release view "$TAG" >/dev/null 2>&1; then
   echo "release $TAG already exists — refreshing notes + assets"
   gh release edit "$TAG" --notes-file "$NOTES_FILE"
-  gh release upload "$TAG" "$SKILL" "$PLUGIN" --clobber
+  gh release upload "$TAG" "${SKILLS[@]}" "$PLUGIN" --clobber
   # If the release is in draft (e.g. orphaned by a previous tag delete), publish it
   if [[ -z "$DRAFT" ]] && [[ "$(gh release view "$TAG" --json isDraft -q .isDraft)" == "true" ]]; then
     echo "release was in draft — publishing"
@@ -100,7 +105,7 @@ if gh release view "$TAG" >/dev/null 2>&1; then
   fi
 else
   echo "creating release $TAG"
-  gh release create "$TAG" "$SKILL" "$PLUGIN" \
+  gh release create "$TAG" "${SKILLS[@]}" "$PLUGIN" \
     --title "$TAG" \
     --notes-file "$NOTES_FILE" \
     $DRAFT

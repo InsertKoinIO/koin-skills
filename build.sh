@@ -2,13 +2,16 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-SRC="$ROOT/skills/di-migration"
-SKILL_OUT="$ROOT/di-migration-skill.skill"
-PLUGIN_OUT="$ROOT/koin-migration-plugin.zip"
+SRC="$ROOT/src"
+SHARED="$SRC/shared"
+SKILLS_OUT="$ROOT/skills"                # generated, committed: the plugin is the repo root
+BUILD="$ROOT/build"                      # git-ignored: evals copy, .skill bundles, plugin zip
+PLUGIN_DIR="$BUILD/plugin"
+PLUGIN_OUT="$BUILD/koin-plugin.zip"
 
 # --- validate sources -------------------------------------------------------
 
-[[ -f "$SRC/SKILL.md" ]]                       || { echo "error: $SRC/SKILL.md not found" >&2; exit 1; }
+[[ -d "$SHARED" ]]                             || { echo "error: src/shared/ missing" >&2; exit 1; }
 [[ -f "$ROOT/.claude-plugin/plugin.json" ]]      || { echo "error: .claude-plugin/plugin.json missing" >&2; exit 1; }
 [[ -f "$ROOT/.claude-plugin/marketplace.json" ]] || { echo "error: .claude-plugin/marketplace.json missing" >&2; exit 1; }
 [[ -f "$ROOT/LICENSE" ]]                       || { echo "error: LICENSE missing" >&2; exit 1; }
@@ -34,25 +37,67 @@ for p in mkt['plugins']:
         sys.exit(f\"marketplace.json: plugin {p.get('name')!r} missing 'source'\")
 "
 
-# --- build .skill bundle (portable single-skill archive, flat layout) ------
+# --- source duplication check ----------------------------------------------
 
-rm -f "$SKILL_OUT"
-(cd "$SRC" && zip -rq "$SKILL_OUT" SKILL.md references $([[ -d evals ]] && echo evals) \
-   -x "*/.DS_Store" "*.DS_Store")
-echo "built: $SKILL_OUT"
+python3 "$ROOT/scripts/check_duplication.py" "$ROOT"
+
+# --- assemble complete skills in skills/ ------------------------------------
+# Sources stay duplication-free: src/skills/<name>/ holds only the skill's own
+# files, src/shared/ the shared references. skills/ gets complete,
+# self-contained skills (own files + shared references), committed so the repo
+# root installs as is.
+
+rm -rf "$SKILLS_OUT" "$BUILD"
+mkdir -p "$SKILLS_OUT"
+
+SKILLS=()
+for dir in "$SRC"/skills/*/; do
+  [[ -f "$dir/SKILL.md" ]] || continue
+  skill="$(basename "$dir")"
+  SKILLS+=("$skill")
+  out="$SKILLS_OUT/$skill"
+  mkdir -p "$out/references"
+  (cd "$dir" && find . -type f ! -name ".DS_Store" -exec sh -c 'mkdir -p "$0/$(dirname "$1")" && cp "$1" "$0/$1"' "$out" {} \;)
+  for f in "$SHARED"/*.md; do
+    name="$(basename "$f")"
+    [[ -e "$dir/references/$name" ]] && { echo "error: src/skills/$skill/references/$name shadows src/shared/$name" >&2; exit 1; }
+    cp "$f" "$out/references/$name"
+  done
+done
+[[ ${#SKILLS[@]} -gt 0 ]] || { echo "error: no src/skills/*/SKILL.md found" >&2; exit 1; }
+echo "assembled in skills/: ${SKILLS[*]}"
+
+# --- copy the plugin to build/plugin (evals write their suite into it) ------
+
+mkdir -p "$PLUGIN_DIR/.claude-plugin"
+cp "$ROOT/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/icon.png" "$PLUGIN_DIR/.claude-plugin/"
+cp -R "$SKILLS_OUT" "$PLUGIN_DIR/skills"
+cp "$ROOT/README.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$PLUGIN_DIR/"
+
+# --- check that every references/*.md link resolves -------------------------
+
+missing=0
+for skill in "${SKILLS[@]}"; do
+  out="$SKILLS_OUT/$skill"
+  for ref in $(grep -rhoE 'references/[a-z0-9-]+\.md' "$out" | sort -u); do
+    [[ -f "$out/$ref" ]] || { echo "error: $skill links to $ref, not found" >&2; missing=1; }
+  done
+done
+[[ $missing -eq 0 ]] || exit 1
+
+# --- build .skill bundles (portable single-skill archives, flat layout) -----
+
+for skill in "${SKILLS[@]}"; do
+  bundle="$BUILD/$skill-skill.skill"
+  (cd "$PLUGIN_DIR/skills/$skill" && zip -rq "$bundle" .)
+  echo "built: build/$skill-skill.skill"
+done
 
 # --- build plugin .zip (marketplace submission layout) ----------------------
 
-rm -f "$PLUGIN_OUT"
-(cd "$ROOT" && zip -rq "$PLUGIN_OUT" \
-  .claude-plugin \
-  skills \
-  README.md \
-  LICENSE \
-  CHANGELOG.md \
-  -x "skills/*/.DS_Store" "*.DS_Store")
-echo "built: $PLUGIN_OUT"
+(cd "$PLUGIN_DIR" && zip -rq "$PLUGIN_OUT" .claude-plugin skills README.md LICENSE CHANGELOG.md)
+echo "built: build/koin-plugin.zip"
 
-echo
-echo "--- plugin contents ---"
-unzip -l "$PLUGIN_OUT"
+# --- post-build check: everything copied, bundles complete -----------------
+
+python3 "$ROOT/scripts/check_build.py" "$ROOT"

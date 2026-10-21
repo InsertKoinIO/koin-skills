@@ -1,0 +1,21 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./build.sh
+      # skills/ is generated from src/ and committed: it must match a fresh build
+      - name: skills/ is up to date
+        run: |
+          if [[ -n "$(git status --porcelain -- skills)" ]]; then
+            echo "::error::skills/ differs from ./build.sh output — edit src/, run ./build.sh, commit skills/"
+            git status --short -- skills
+            exit 1
+          fi
