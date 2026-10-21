@@ -1,6 +1,6 @@
 # Dagger 2 → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)
@@ -26,7 +26,7 @@ both running side by side until the last `@Component` is gone.
 Unlike Hilt, Dagger 2 has no generic entry-point accessor — resolution goes
 through your own `@Component` interface methods. This makes the annotation-style
 bridge (a `@Singleton fun` inside a `@Module @Configuration` class) the natural
-choice; the Safe-DSL `Scope.dagger<T>()` helper from `hilt-to-koin.md` doesn't
+choice; the Compiler Plugin DSL `Scope.dagger<T>()` helper from `hilt-to-koin.md` doesn't
 translate cleanly.
 
 ### Bridge — co-locate `@Singleton fun` in the consumer feature's `@Module`
@@ -481,7 +481,7 @@ AFTER: `@ActivityScope` (or `@Scope` + `@Scoped`) and `AndroidScopeComponent` in
 
 ## Parameter Resolution
 
-Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-safe-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
+Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-compiler-plugin-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
 
 ## Lazy and Provider
 

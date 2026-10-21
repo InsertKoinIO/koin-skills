@@ -1,0 +1,39 @@
+# Koin skills
+
+> Official agent skills for Koin, the dependency injection framework for Kotlin and Kotlin Multiplatform: set up Koin, write Koin code, migrate from Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x, and diagnose Koin apps. Packaged as the `koin` plugin for Claude Code, with the Kotzilla MCP Server bundled.
+
+Install in Claude Code:
+
+```
+/plugin marketplace add InsertKoinIO/koin-skills
+/plugin install koin@koin-skills
+```
+
+## Skills
+
+- [koin-setup](https://github.com/InsertKoinIO/koin-skills/blob/main/skills/koin-setup/SKILL.md): set up Koin in a new or legacy project, or alongside an existing DI container
+- [koin](https://github.com/InsertKoinIO/koin-skills/blob/main/skills/koin/SKILL.md): write Koin code following the project's style and the Koin rules
+- [di-migration](https://github.com/InsertKoinIO/koin-skills/blob/main/skills/di-migration/SKILL.md): progressive migration from Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x, module by module
+- [koin-diagnose](https://github.com/InsertKoinIO/koin-skills/blob/main/skills/koin-diagnose/SKILL.md): Koin errors and app behavior, proven with the Kotzilla MCP + SDK
+
+## Key Koin facts
+
+- Two styles, one container, chosen explicitly per project, no mixing unless asked: **Koin DSL** (`module { }`, no annotations on classes) or **Koin Annotations** (`@Singleton`, `@Factory`, `@KoinViewModel`, `@Module`), JSR-330 compatible. Prefer `@Singleton` over `@Single`.
+- Three DSL forms: **Compiler Plugin DSL** `single<T>()` / `single { create(::buildT) }` (recommended), **Constructor DSL** `singleOf(::T)`, **Classic DSL** `single { T(get()) }` (custom expressions).
+- The **Koin Compiler Plugin** (`id("io.insert-koin.compiler.plugin")`) checks the whole graph at build time, in both styles and every DSL form. It replaces `checkModules()` / `verify()` tests.
+- **Koin KSP is deprecated**: never `koin-ksp-compiler`, never `org.koin.ksp.generated.*`, never pin `koin-annotations:2.x`. Let `koin-bom` resolve versions.
+- Default versions: Koin 4.2.2, Koin Compiler Plugin 1.2.1, Kotlin 2.3.20 or later. Check the latest on Maven Central before writing Gradle.
+- Runtime behavior (graph behavior, scopes, memory, performance) is not checked by the compiler: use the Kotzilla MCP.
+
+## Rules and references
+
+- [Koin rules](https://github.com/InsertKoinIO/koin-skills/blob/main/src/shared/rules.md): style choice, no KSP, versions, configuration, modules, compile-time verification
+- [Compiler Plugin DSL reference](https://github.com/InsertKoinIO/koin-skills/blob/main/src/shared/koin-compiler-plugin-dsl.md): imports and syntax for DSL output
+- [Koin Annotations reference](https://github.com/InsertKoinIO/koin-skills/blob/main/src/shared/koin-annotations.md): imports and syntax for Annotations output
+
+## Related
+
+- [Kotzilla MCP](https://mcp.kotzilla.io/mcp): Koin knowledge, Koin error diagnosis and runtime debugging. Bundled with the plugin; without it: `claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp` in Claude Code, or this URL as an HTTP MCP server in other agents
+- [Koin documentation for LLMs](https://insert-koin.io/llms.txt): index of the official docs
+- [Koin documentation](https://insert-koin.io/docs/intro): official docs
+- [Koin repository](https://github.com/InsertKoinIO/koin)

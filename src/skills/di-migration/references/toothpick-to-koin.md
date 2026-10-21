@@ -1,6 +1,6 @@
 # Toothpick → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration](#progressive-migration)

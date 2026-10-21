@@ -46,7 +46,7 @@ class NetworkModule {
         Retrofit.Builder().client(client).baseUrl(BASE_URL).build()
 }
 
-// Safe DSL: a function, referenced with create
+// Compiler Plugin DSL: a function, referenced with create
 fun buildRetrofit(client: OkHttpClient): Retrofit =
     Retrofit.Builder().client(client).baseUrl(BASE_URL).build()
 

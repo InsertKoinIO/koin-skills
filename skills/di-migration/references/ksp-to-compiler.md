@@ -1,6 +1,6 @@
 # Koin KSP Annotations → Koin Compiler Plugin Migration Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
 1. [Why Migrate](#why-migrate)
@@ -322,7 +322,7 @@ startKoin {
 
 The compiler plugin transforms reified type parameter calls into constructor resolution:
 
-Same mapping as `references/dsl-to-compiler.md` → "Core DSL Mapping" (owner of the classic / autowire → Safe DSL table).
+Same mapping as `references/dsl-to-compiler.md` → "Core DSL Mapping" (owner of the classic / constructor → Compiler Plugin DSL table).
 
 **Note**: The old `singleOf(::Class)` syntax still works if you prefer not to change DSL code immediately. The compiler plugin supports both styles.
 

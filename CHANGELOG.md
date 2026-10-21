@@ -1,11 +1,11 @@
 # Changelog
 
-All notable changes to the **koin** plugin (formerly `koin-migration`) are documented in this file.
+All notable changes to the **koin** plugin (successor of `koin-migration`) are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.0.0] - 2026-10-21
 
-Work in progress toward 2.0.0 (plugin rename `koin-migration` → `koin`).
+New plugin **`koin`** — the official Koin skills, succeeding `koin-migration` (1.0.0, migration only).
 
 ### Changed
 - Eval cases and the eval harness moved to a separate repo: skills no longer ship an `evals/` folder
@@ -18,10 +18,11 @@ Work in progress toward 2.0.0 (plugin rename `koin-migration` → `koin`).
 
 ### Changed
 - Kotzilla MCP Server bundled with the plugin (`plugin:koin:kotzilla`), inactive until the user signs in through `/mcp`; skills still check that Kotzilla tools are connected, from any server, and say how to connect in other agents; `privacyPolicyUrl` in `plugin.json`
-- Plugin renamed `koin-migration` → `koin`, marketplace `koin-skills`, repo `InsertKoinIO/koin-skills`: install with `/plugin install koin@koin-skills`
+- Plugin `koin` in marketplace `koin-skills`, repo `InsertKoinIO/koin-skills`: install with `/plugin install koin@koin-skills` (`koin-migration` is no longer published from this repo)
 - Build: sources move to `src/skills` + `src/shared` and hold no copies — `build.sh` generates complete skills in `skills/` (committed, the installed plugin), with a source-duplication check and a post-build completeness check; release asset renamed `koin-plugin.zip`
 - `di-migration` reads the shared references instead of owning duplicated rules; Kotzilla handoff is a step of the per-module validation loop
 - Default versions Koin 4.2.2 / Compiler Plugin 1.2.1, latest checked on Maven Central
+- DSL terminology aligned with insert-koin.io: **Compiler Plugin DSL** `single<T>()` (was "Safe DSL"), **Constructor DSL** `singleOf(::T)` (was "Autowire DSL"), **Classic DSL** `single { T(get()) }`; `koin-safe-dsl.md` renamed `koin-compiler-plugin-dsl.md`
 - Graph verification is compile-time (Compiler Plugin); `checkModules()` / `verify()` no longer emitted
 - Compose: `koin-compose` + `koin-compose-viewmodel`; `KoinContext` removed (deprecated)
 

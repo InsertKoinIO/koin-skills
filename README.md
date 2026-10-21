@@ -1,6 +1,6 @@
 # Koin Skills
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](./LICENSE)
 [![Koin](https://img.shields.io/badge/Koin-4.x-orange)](https://insert-koin.io)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20%2B-purple)](https://kotlinlang.org)
@@ -67,15 +67,15 @@ Each [GitHub Release](https://github.com/InsertKoinIO/koin-skills/releases) atta
 | Hilt (+ Dagger) | Koin 4.x + Compiler Plugin (annotations) |
 | Dagger 2 (no Hilt) | Koin 4.x + Compiler Plugin (annotations) |
 | Toothpick | Koin 4.x + Compiler Plugin (annotations) |
-| Kodein | Koin 4.x + Compiler Plugin (Safe DSL) |
-| Koin 3.x | Koin 4.x Safe DSL + Compiler Plugin |
-| Koin DSL | Koin 4.x Safe DSL + Compiler Plugin |
+| Kodein | Koin 4.x Compiler Plugin DSL |
+| Koin 3.x | Koin 4.x Compiler Plugin DSL |
+| Koin DSL | Koin 4.x Compiler Plugin DSL |
 | Koin KSP Annotations | Koin 4.x Annotations + Compiler Plugin |
 
 > For **greenfield projects** or **manual DI / service locator** code, there's
 > nothing to migrate *from* — use Koin directly per the official docs at
-> [insert-koin.io](https://insert-koin.io) and apply the same Safe DSL + Compiler
-> Plugin conventions this skill uses.
+> [insert-koin.io](https://insert-koin.io) and apply the same Compiler Plugin
+> conventions this skill uses.
 
 ## Usage
 
@@ -104,7 +104,7 @@ For migrations, `di-migration` follows an **8-step workflow**: Inventory → Pla
 - **JSR-330 support** — `javax.inject.*` and `jakarta.inject.*` annotations reusable as-is
 - **Custom qualifiers** — existing `@Qualifier` annotations from Dagger/Hilt work directly
 - **Scope archetypes** — `@ActivityScope`, `@FragmentScope`, `@ViewModelScope`, `@ActivityRetainedScope`
-- **Safe DSL** — `single<T>()`, `factory<T>()`, `viewModel<T>()` with reified type parameters
+- **Compiler Plugin DSL** — `single<T>()`, `factory<T>()`, `viewModel<T>()` with reified type parameters
 
 ## Kotzilla MCP Server
 

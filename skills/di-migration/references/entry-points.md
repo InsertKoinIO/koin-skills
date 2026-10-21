@@ -87,7 +87,7 @@ through the constructor.
 ```kotlin
 // Declaration
 @KoinViewModel class DetailViewModel(val repo: Repo, val handle: SavedStateHandle) : ViewModel()  // Annotations
-viewModel<DetailViewModel>()                                                                       // Safe DSL
+viewModel<DetailViewModel>()                                                                       // Compiler Plugin DSL
 
 // Retrieval
 val vm: DetailViewModel by viewModel()     // Activity / Fragment (koin-android)
@@ -204,7 +204,7 @@ Workers get constructor injection like any class:
 @KoinWorker
 class SyncWorker(ctx: Context, params: WorkerParameters, val repo: Repo) : CoroutineWorker(ctx, params)
 
-// Safe DSL
+// Compiler Plugin DSL
 worker<SyncWorker>()
 
 // Start — required when using Workers: Koin creates them

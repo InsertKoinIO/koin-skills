@@ -1,6 +1,6 @@
 # Hilt → Koin 4.x + Koin Compiler Plugin Migration Reference
 
-> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-safe-dsl.md`.
+> **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
 1. [Progressive Migration with koin-dagger-bridge](#progressive-migration)
@@ -70,9 +70,9 @@ When the binding migrates into Koin, delete the bridge function and the
 
 Several consumers need the same bridge → "Bridging with the existing DI" in the `di-migration` SKILL.md.
 
-### Option C — `Scope.dagger<T>()` helper (for Safe DSL modules)
+### Option C — `Scope.dagger<T>()` helper (for Compiler Plugin DSL modules)
 
-If your migration output style is Safe DSL (`module { }` blocks) rather than
+If your migration output style is Compiler Plugin DSL (`module { }` blocks) rather than
 annotations, a scope helper is cleaner than a function bridge:
 
 ```kotlin
@@ -253,7 +253,7 @@ class UserRepository(
 
 ## Parameter Resolution
 
-Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-safe-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
+Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`, `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin — see "Parameter resolution" in `references/koin-compiler-plugin-dsl.md` and "Parameters & qualifiers" in `references/koin-annotations.md`.
 
 ## Component Conversion
 

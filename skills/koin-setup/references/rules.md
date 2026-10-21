@@ -7,7 +7,7 @@ push back first ("When a request breaks a principle" in
 `references/principles.md`).
 
 Exact imports and syntax: `references/koin-annotations.md` and
-`references/koin-safe-dsl.md`. Don't infer them from memory.
+`references/koin-compiler-plugin-dsl.md`. Don't infer them from memory.
 
 ## 1. One definition style, chosen explicitly
 
@@ -24,15 +24,15 @@ Koin supports two styles, both compiled by the Koin Compiler Plugin:
 
   | Form | Example | Use when |
   |---|---|---|
-  | **Safe DSL** | `single<MyClass>()`, `single { create(::MyClass) }` | **Preferred when the Compiler Plugin is present** and the definition is a constructor (or function builder) |
-  | Autowire DSL | `singleOf(::MyClass)` | Project without the Compiler Plugin, or matching existing code |
+  | **Compiler Plugin DSL** | `single<MyClass>()`, `single { create(::MyClass) }` | **Preferred when the Compiler Plugin is present** and the definition is a constructor (or function builder) |
+  | Constructor DSL | `singleOf(::MyClass)` | Project without the Compiler Plugin, or matching existing code |
   | Classic DSL | `single { MyClass(get()) }` | The definition needs a custom expression a constructor or function builder can't express, or no Compiler Plugin |
 
-  Pick by the **definition expression**: a plain constructor → Safe DSL
+  Pick by the **definition expression**: a plain constructor → Compiler Plugin DSL
   (with the Compiler Plugin); anything custom → function builder or classic
-  lambda. Classic and autowire are valid Koin — write them when needed, and
+  lambda. Classic and Constructor DSL are valid Koin — write them when needed, and
   don't rewrite existing code unless the user asks (`di-migration` covers
-  DSL → Safe DSL).
+  DSL → Compiler Plugin DSL).
 
 **The style is a project decision.** Make it explicit: state the style before
 writing code (detect it in an existing project, ask in a new one) and keep to
@@ -43,14 +43,14 @@ Within either style:
 
 - Types that can't be built from their constructor (Retrofit, Room, OkHttp
   builders) use a **function builder** (`references/principles.md` rule 1):
-  `@Singleton fun` in a `@Module`, or `single { create(::buildX) }` in Safe DSL.
+  `@Singleton fun` in a `@Module`, or `single { create(::buildX) }` in Compiler Plugin DSL.
 - **Auto-bind (Annotations)** — a `@Singleton` / `@Factory` class implementing
   a single interface is bound to it automatically: no `binds = [...]`.
-- Both Safe DSL interface-binding forms are valid — don't normalize one to the
+- Both Compiler Plugin DSL interface-binding forms are valid — don't normalize one to the
   other: `single<Impl>().bind<I>()` and `single<Impl>().withOptions { bind<I>() }`.
 - **Qualifiers** — annotations wherever a qualifier is needed: `@Named` /
   custom `@Qualifier` on the class or the constructor parameter, in both
-  Annotations and Safe DSL (`single<T>()` stays plain). `named("x")` is
+  Annotations and Compiler Plugin DSL (`single<T>()` stays plain). `named("x")` is
   classic DSL only.
 
 ## 2. Compiler Plugin recommended, Koin KSP never
@@ -59,7 +59,7 @@ The Koin Compiler Plugin (`id("io.insert-koin.compiler.plugin")`) is the
 **recommended default**: it makes the graph compile safe (§6). Recommend it in
 every setup and migration, and say what it brings — but it's the user's
 choice, not a requirement. The user declines → Koin DSL without the plugin
-(autowire or classic forms, §1); Annotations need the plugin, so they're off
+(constructor or classic forms, §1); Annotations need the plugin, so they're off
 the table. Respect the answer for the rest of the conversation.
 
 Whatever the choice, never Koin KSP:
@@ -102,15 +102,15 @@ changing anything.
 
 ## 4. Imports
 
-Every Safe DSL primitive and the reified `startKoin<App>` entry point live in
-**`org.koin.plugin.module.dsl`**. The autowire `*Of` family lives in
+Every Compiler Plugin DSL primitive and the reified `startKoin<App>` entry point live in
+**`org.koin.plugin.module.dsl`**. The Constructor DSL `*Of` family lives in
 `org.koin.core.module.dsl.*`.
 
 ## 5. Configuration — assembling the graph
 
 Each definition style has its own configuration style. Use the one that matches
 the project's style (§1). Code: "Modules" / "App entry point" in
-`references/koin-annotations.md` and `references/koin-safe-dsl.md`.
+`references/koin-annotations.md` and `references/koin-compiler-plugin-dsl.md`.
 
 ### Annotations configuration — discovery
 

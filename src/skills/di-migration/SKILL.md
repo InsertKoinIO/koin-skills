@@ -3,7 +3,7 @@ name: di-migration
 description: >
   Migrate Kotlin / Android / KMP projects to Koin 4.x with the Koin Compiler Plugin:
   Hilt, Dagger 2, Toothpick and Kodein to Koin, Koin 3.x to 4.x, classic Koin DSL to
-  Safe DSL, and Koin KSP annotations to the Compiler Plugin. Progressive, module by
+  Compiler Plugin DSL, and Koin KSP annotations to the Compiler Plugin. Progressive, module by
   module, keeping the old container running until the last binding moves. Use when
   the user wants to migrate, convert or switch DI frameworks, remove Hilt / Dagger /
   Toothpick / Kodein, upgrade Koin, move off KSP, make the Koin graph compile safe
@@ -32,7 +32,7 @@ you need instead of inferring from memory.
 
 1. **Target style by source** (an explicit choice, `rules.md` §1):
    - **Hilt / Dagger / Toothpick / Koin KSP** → Annotations
-   - **Kodein / Classic Koin DSL** → Safe DSL
+   - **Kodein / Classic Koin DSL** → Compiler Plugin DSL
 2. **Koin KSP projects** — follow the removal checklist in
    `references/ksp-to-compiler.md`.
 3. **Progressive migration is universal.** Never rewrite existing DI modules in
@@ -153,7 +153,7 @@ old container. Two options:
   `references/hilt-to-koin.md`.
 - **Manual bridge — co-located in the consumer's `@Module`** (recommended).
   `@Singleton fun` for annotations, scope helper (`Scope.dagger<T>()`,
-  `Scope.toothpick<T>()`) for Safe DSL. Per-source examples in each reference.
+  `Scope.toothpick<T>()`) for Compiler Plugin DSL. Per-source examples in each reference.
 
 A1 per-module verification only sees a module's own bindings — co-located
 bridges keep A1 green; sibling aggregators don't. When duplication across
@@ -184,7 +184,7 @@ Produce:
 - Mapping table: source construct → target (from reference file)
 - **Ranked migration candidates** (see "Where to start" above) — top 1–3, ask
   user to confirm first target
-- For **Kodein**, confirm Safe DSL output is what the user expects (annotations
+- For **Kodein**, confirm Compiler Plugin DSL output is what the user expects (annotations
   are explicitly not used for Kodein migrations)
 - Risk flags: anything that can't be 1:1 translated
 - Gradle changes and version requirements
@@ -265,7 +265,7 @@ When the last module has been migrated and validated:
 
 Constructor and function parameters (`T`, `T?`, `Lazy<T>`, `List<T>`,
 `@InjectedParam`, qualifiers, properties) are resolved by the Compiler Plugin —
-see "Parameter resolution" in `references/koin-safe-dsl.md` and "Parameters &
+see "Parameter resolution" in `references/koin-compiler-plugin-dsl.md` and "Parameters &
 qualifiers" in `references/koin-annotations.md`. JSR-330 annotations from the
 source framework are reused as-is.
 

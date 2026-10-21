@@ -28,7 +28,7 @@ class UserRepository(private val cache: UserCache)
 @ViewModelScope
 class UserViewModel(private val repository: UserRepository) : ViewModel()
 
-// Safe DSL
+// Compiler Plugin DSL
 val appModule = module {
     viewModelScope {
         scoped<UserCache>()
@@ -75,7 +75,7 @@ Official doc: https://insert-koin.io/docs/reference/koin-android/scope/
 @Scoped
 class SessionRepository(val api: Api)
 
-// Safe DSL
+// Compiler Plugin DSL
 scope<UserSession> { scoped<SessionRepository>() }
 ```
 
