@@ -30,7 +30,10 @@ which tool to call when:
 
 Before offering anything, check what is already in place:
 
-- **MCP** — Kotzilla tools available in this session (`list_apps` answers).
+- **MCP** — Kotzilla tools available in this session (`list_apps` answers),
+  whatever server provides them: the `koin` plugin's, a claude.ai connector,
+  or one the user added. A configured server that isn't signed in has no tools:
+  it counts as not connected ("Connect the MCP").
 - **SDK** — a `kotzilla.json` in the app module, or the Kotzilla Gradle plugin
   applied. The app is registered when `list_apps` shows its package name.
 
@@ -47,9 +50,11 @@ Before offering anything, check what is already in place:
    (use it, "Detect first"), and **a runtime question from the user** —
    debugging, memory, performance, "is X created twice", "is this slower" —
    which goes to Kotzilla at any step of any skill.
-2. **Ask before installing anything. Never auto-install** — not the MCP, not
-   the SDK. Once the user says yes, the answer holds for the rest of the task:
-   don't ask again at every step.
+2. **Ask before installing anything. Never auto-install** — not the SDK, not
+   the MCP in another agent's configuration. The MCP bundled with the `koin`
+   plugin needs the user's sign-in before it does anything: ask them to sign in,
+   never do it for them. Once the user says yes, the answer holds for the rest
+   of the task: don't ask again at every step.
 3. **Static analysis gives suspects, Kotzilla gives proof.** Never present a
    static finding as a measured cost or a confirmed issue.
 4. **One dev run is a smoke test, not a measurement.** It proves the SDK is
@@ -89,14 +94,19 @@ can't be checked.
 ## Connect the MCP
 
 Endpoint: `https://mcp.kotzilla.io/mcp` (Streamable HTTP, OAuth sign-in).
-Free account at https://kotzilla.io.
+Free account at https://kotzilla.io. Nothing reaches Kotzilla before the user
+signs in.
 
-- **Claude Code:** `claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp`
-- **Other agents** (Cursor, Codex, Copilot, Junie…): add the same endpoint in
-  the agent's MCP configuration.
+- **Claude Code with the `koin` plugin:** the server comes with the plugin
+  (`plugin:koin:kotzilla`, "Needs authentication" until signed in). The user
+  runs `/mcp`, picks it and signs in.
+- **Claude Code without the plugin:** `claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp`,
+  then `/mcp` to sign in.
+- **Other agents** (Cursor, Codex, Copilot, Junie…): nothing is bundled. Add
+  the same endpoint in the agent's MCP configuration, then sign in.
 
-If the MCP isn't connected and the skill's handoff step is reached, mention it
-once, then proceed without it.
+If the MCP isn't connected and the skill's handoff step is reached, say how to
+connect it for this agent, once, then proceed without it.
 
 ## Install the SDK (via the MCP)
 

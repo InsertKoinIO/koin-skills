@@ -110,14 +110,18 @@ For migrations, `di-migration` follows an **8-step workflow**: Inventory → Pla
 
 `koin-diagnose` (and the other skills at their handoff points) use the **Kotzilla MCP Server** for Koin errors, configuration fixes, best practices and runtime proof.
 
-Register a free account at https://kotzilla.io.
+**Included with the `koin` plugin** in Claude Code: it shows as `plugin:koin:kotzilla`
+(needs authentication) until you sign in — run `/mcp`, pick it, sign in with a free
+account from https://kotzilla.io. Nothing reaches Kotzilla before you sign in.
 
-MCP Server endpoint: `https://mcp.kotzilla.io/mcp` (HTTP transport, requires authentication).
-
-Example with Claude Code:
+Without the plugin, or in another agent (Cursor, Codex, Copilot, Junie…), add the
+endpoint `https://mcp.kotzilla.io/mcp` (HTTP transport, OAuth) yourself. With Claude Code:
 ```bash
 claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp
 ```
+
+The skills check that Kotzilla tools are connected, whatever server provides them, before
+using them — and tell you how to connect for your agent when they aren't.
 
 ## Requirements
 

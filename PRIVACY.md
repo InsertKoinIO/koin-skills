@@ -10,7 +10,8 @@ collect, store, or transmit user data**.
 
 - Provides `SKILL.md` and `references/*.md` as text files
 - These files are read by Claude Code locally when you invoke the skill
-- No telemetry, analytics, or network calls are performed by the plugin
+- No telemetry or analytics; the only network endpoint the plugin declares is
+  the Kotzilla MCP Server (below)
 - No user code, file contents, or identifying information is sent anywhere
   by the plugin itself
 
@@ -20,13 +21,17 @@ Any network interaction (prompt submission, responses) is performed by Claude
 Code / the Anthropic API, governed by Anthropic's privacy policy:
 https://www.anthropic.com/legal/privacy
 
-## Optional integrations
+## Kotzilla MCP Server
 
-The plugin mentions the **Kotzilla MCP Server** as an optional companion for
-Koin debugging and observability. Connecting to it is entirely at the user's
-discretion (`claude mcp add kotzilla ...`) and governed by Kotzilla's own
-privacy policy at https://kotzilla.io. The plugin itself does not establish
-this connection or transmit anything to Kotzilla.
+The plugin declares the **Kotzilla MCP Server** (`https://mcp.kotzilla.io/mcp`)
+as an optional companion for Koin debugging and observability. Claude Code
+lists it as needing authentication and may contact the endpoint to check its
+status; no code, file contents or prompts are sent to it.
+
+Using it requires the user to sign in explicitly (OAuth, through `/mcp`) with a
+Kotzilla account. Only after that can Claude call its tools, and what those
+calls send is governed by Kotzilla's own privacy policy at https://kotzilla.io.
+Users who don't sign in, or disable the server in `/mcp`, never use it.
 
 ## Questions
 

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "koin",
   "version": "1.0.0",
   "description": "Official Koin skills: set up Koin, write Koin code, migrate from Hilt, Dagger, Toothpick, Kodein or older Koin, and diagnose Koin apps with Kotzilla. Koin 4.x with the Koin Compiler Plugin — Annotations (JSR-330 compatible) or DSL, compile safe in both, Kotlin Multiplatform.",
@@ -7,7 +8,9 @@
   },
   "homepage": "https://github.com/InsertKoinIO/koin-skills",
   "repository": "https://github.com/InsertKoinIO/koin-skills",
+  "supportUrl": "https://github.com/InsertKoinIO/koin-skills/issues",
   "license": "Apache-2.0",
+  "privacyPolicyUrl": "https://github.com/InsertKoinIO/koin-skills/blob/main/PRIVACY.md",
   "keywords": [
     "koin",
     "dependency-injection",
@@ -18,5 +21,11 @@
     "hilt",
     "dagger",
     "kodein"
-  ]
+  ],
+  "mcpServers": {
+    "kotzilla": {
+      "type": "http",
+      "url": "https://mcp.kotzilla.io/mcp"
+    }
+  }
 }

@@ -17,6 +17,7 @@ Work in progress toward 2.0.0 (plugin rename `koin-migration` → `koin`).
 - `shared/` references used by every skill: rules, DI principles, Gradle, entry points, scopes, Kotzilla handoff
 
 ### Changed
+- Kotzilla MCP Server bundled with the plugin (`plugin:koin:kotzilla`), inactive until the user signs in through `/mcp`; skills still check that Kotzilla tools are connected, from any server, and say how to connect in other agents; `privacyPolicyUrl` in `plugin.json`
 - Plugin renamed `koin-migration` → `koin`, marketplace `koin-skills`, repo `InsertKoinIO/koin-skills`: install with `/plugin install koin@koin-skills`
 - Build: sources move to `src/skills` + `src/shared` and hold no copies — `build.sh` generates complete skills in `skills/` (committed, the installed plugin), with a source-duplication check and a post-build completeness check; release asset renamed `koin-plugin.zip`
 - `di-migration` reads the shared references instead of owning duplicated rules; Kotzilla handoff is a step of the per-module validation loop
