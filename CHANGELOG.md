@@ -5,41 +5,38 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [2.0.0] - 2026-10-21
 
-New plugin **`koin`** — the official Koin skills, succeeding `koin-migration` (1.0.0, migration only).
-
-### Changed
-- Eval cases and the eval harness moved to a separate repo: skills no longer ship an `evals/` folder
+New plugin **`koin`**, the official Koin skills, succeeding `koin-migration` (1.0.0, migration only).
+Install: `/plugin marketplace add InsertKoinIO/koin-skills` then `/plugin install koin@koin-skills`.
 
 ### Added
-- `koin-setup` skill — set up Koin in a new or legacy project, or alongside an existing DI container
-- `koin` skill — write Koin code following the project's style and the Koin rules
-- `koin-diagnose` skill — Koin errors (Kotzilla MCP `koin_diagnose`, no SDK needed) and app behavior (static suspects, then proof with the Kotzilla MCP + SDK)
-- `shared/` references used by every skill: rules, DI principles, Gradle, entry points, scopes, Kotzilla handoff
-- Metro migration path (`metro-to-koin.md`: bindings, qualifiers, graph extensions, ViewModels, Compose, KMP, testing) and Metro bridge (`bridging.md`)
-- Multibindings, one pattern for every source: each element a `@Named` definition bound to `T`, consumers inject `List<T>`
-- Scopes: a migrated child graph maps to a scope; "Scope with a runtime value"; scope test recipe
+- Four skills:
+  - `koin-setup`: set up Koin in a new or legacy project, or next to a DI container the user keeps
+  - `koin`: write Koin code in the project's style, and push back on DI mistakes
+  - `di-migration`: migrate from Hilt, Dagger, Toothpick, Kodein, **Metro**, Koin 3.x, Koin DSL or Koin KSP, progressively, module by module
+  - `koin-diagnose`: Koin errors and crashes, and app behavior (static suspects, proof with Kotzilla)
+- Shared references used by every skill: rules, DI principles, Gradle, entry points, scopes, testing, Annotations, Compiler Plugin DSL, bridging, Kotzilla
+- Bridging with an existing container (`bridging.md`): `koin-dagger-bridge` for Hilt (`dagger<T>()` on an `@EntryPoint`, both styles), Dagger 2, Toothpick, Kodein and Metro; two containers at startup
+- Kotzilla MCP Server bundled with the plugin (`plugin:koin:kotzilla`), inactive until the user signs in through `/mcp`
+- Scopes: "Choose the scope": no scope, then a scope archetype (ViewModel preferred, Activity, retained Activity, Fragment), a custom scope only when none fits; scope with a runtime value; scope test recipe
 - Startup values (`androidContext`, `koin.declare` + `@Provided`, `@Property`); keyed ViewModels in Compose
-- Principles: startup work is code, not a `Unit` definition
+- One multibinding pattern for every source: each element a `@Named` definition bound to `T`, consumers inject `List<T>`
 
 ### Changed
-- Kotzilla MCP Server bundled with the plugin (`plugin:koin:kotzilla`), inactive until the user signs in through `/mcp`; skills still check that Kotzilla tools are connected, from any server, and say how to connect in other agents; `privacyPolicyUrl` in `plugin.json`
-- Plugin `koin` in marketplace `koin-skills`, repo `InsertKoinIO/koin-skills`: install with `/plugin install koin@koin-skills` (`koin-migration` is no longer published from this repo)
-- Build: sources move to `src/skills` + `src/shared` and hold no copies — `build.sh` generates complete skills in `skills/` (committed, the installed plugin), with a source-duplication check and a post-build completeness check; release asset renamed `koin-plugin.zip`
-- `di-migration` reads the shared references instead of owning duplicated rules; Kotzilla handoff is a step of the per-module validation loop
-- Default versions Koin 4.2.2 / Compiler Plugin 1.2.1, latest checked on Maven Central
-- DSL terminology aligned with insert-koin.io: **Compiler Plugin DSL** `single<T>()` (was "Safe DSL"), **Constructor DSL** `singleOf(::T)` (was "Autowire DSL"), **Classic DSL** `single { T(get()) }`; `koin-safe-dsl.md` renamed `koin-compiler-plugin-dsl.md`
-- Graph verification is compile-time (Compiler Plugin); `checkModules()` / `verify()` no longer emitted
+- Kotzilla is always proposed with its purpose, never forced: a decline holds for the whole conversation, the user signs in and approves installs, and every skill works without it
+- Compile safety: the Compiler Plugin checks every DSL form, Classic included (full graph at the entry point + every call site). Converting to Compiler Plugin DSL is optional; the compile-safety proposal is "add the Compiler Plugin", not a rewrite
+- DSL terminology aligned with insert-koin.io: **Compiler Plugin DSL** `single<T>()` (was "Safe DSL"), **Constructor DSL** `singleOf(::T)` (was "Autowire DSL"), **Classic DSL** `single { T(get()) }`
+- Minimum versions: Kotlin 2.3.20, Koin 4.2.2, Compiler Plugin 1.2.1, with the latest checked on Maven Central
+- Graph verification is compile-time; `checkModules()` / `verify()` no longer emitted
 - Compose: `koin-compose` + `koin-compose-viewmodel`; `KoinContext` removed (deprecated)
-- Classic and Constructor DSL are compile-checked once the Compiler Plugin is added; converting to Compiler Plugin DSL is optional — the compile-safety proposal is "add the Compiler Plugin", not a module rewrite
-- Scope choice: no scope → a scope archetype (ViewModel preferred, Activity, retained Activity, Fragment) → a custom scope only when none fits
+- Repo: sources in `src/`, complete skills generated in `skills/` (committed, the installed plugin); release asset `koin-plugin.zip`; evals moved to a separate repo
 
 ### Fixed
-- Hilt / Dagger bridge artifact is `koin-dagger-bridge` (`koin-android-dagger` doesn't exist)
-- Android scopes use `AndroidScopeComponent`
-- Compiler Plugin DSL without the Compiler Plugin fails at runtime, not "compiles without checks"
-- Compiler Plugin checks: the full graph at the entry point + every call site
+- Annotated modules load with `startKoin { module<T>() }` or `modules(T::class)`; `modules(module<T>())` doesn't compile
+- Android scope archetypes and `@KoinWorker` are in `org.koin.android.annotation`; `.bind<T>()` is `org.koin.dsl.bind`; custom qualifiers use `qualifier<T>()`
+- `koin-dagger-bridge` is Hilt-only and one-way (Koin reads Hilt); the old framework is removed only at the end of a migration
 - Dagger `@Component.Factory` / `@Component.Builder` inputs map to startup values, not `@InjectedParam`
-- Kotzilla: an app-level baseline exists before migrating from any framework
+- `Provider<T>` maps to `Lazy<T>`; `Scope.get()` per call is a service locator and needs the user's OK
+- Compiler Plugin DSL without the Compiler Plugin fails at runtime, not "compiles without checks"
 
 ## [1.0.0] - 2026-04-14
 
