@@ -96,7 +96,8 @@ Use the latest release if it's newer than the default; use the defaults if
 Maven Central can't be reached. Say which source you used.
 
 **Kotlin bump** — below Kotlin `2.3.20`, bumping Kotlin cascades: check that
-KSP (`<kotlin>-<ksp>` versioning), the Compose Compiler plugin, Room, kapt
+KSP (before 2.3.0 versioned `<kotlin>-<ksp>`, tied to one Kotlin version;
+from 2.3.0 versioned on its own — check its release notes for Kotlin support), the Compose Compiler plugin, Room, kapt
 processors and the AGP minimum still line up, and confirm with the user before
 changing anything.
 

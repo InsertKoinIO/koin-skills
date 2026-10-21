@@ -86,7 +86,7 @@ runtime (open/close, leaks, what each holds), use **Kotzilla**
 (`references/kotzilla.md`).
 
 Official docs: https://insert-koin.io/docs/reference/koin-core/scopes/ ·
-https://insert-koin.io/docs/reference/koin-annotations/scope/
+https://insert-koin.io/docs/reference/koin-core/scopes/
 
 ## Other scopes — official docs
 

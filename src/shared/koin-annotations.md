@@ -195,5 +195,5 @@ manually.
 ## Not covered here
 
 - Compiler Plugin DSL output — see `references/koin-compiler-plugin-dsl.md`
-- Multiplatform setup in depth — see https://insert-koin.io/docs/quickstart/kmp
+- Multiplatform setup in depth — see https://insert-koin.io/docs/reference/koin-core/kmp-setup
 - Property file loading, dynamic plugins, ktor integration — see https://insert-koin.io

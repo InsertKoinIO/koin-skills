@@ -149,11 +149,12 @@ touching anything else.
 While migrating, Koin definitions may need to consume bindings still in the
 old container. Two options:
 
-- **Library bridge (Hilt/Dagger)** — `koin-dagger-bridge`. See
+- **Library bridge (Hilt)** — `koin-dagger-bridge`: `dagger<T>()` returns a
+  Hilt `@EntryPoint` interface `T`, then call its accessor. See
   `references/hilt-to-koin.md`.
 - **Manual bridge — co-located in the consumer's `@Module`** (recommended).
-  `@Singleton fun` for annotations, scope helper (`Scope.dagger<T>()`,
-  `Scope.toothpick<T>()`) for Compiler Plugin DSL. Per-source examples in each reference.
+  `@Singleton fun` for annotations, scope helper (`Scope.toothpick<T>()`,
+  `Scope.kodein<T>()`) for Compiler Plugin DSL. Per-source examples in each reference.
 
 A1 per-module verification only sees a module's own bindings — co-located
 bridges keep A1 green; sibling aggregators don't. When duplication across

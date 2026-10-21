@@ -37,7 +37,7 @@ dependencies {
   needed only when classes carry Koin annotations (`@InjectedParam`, `@Named`,
   `@Qualifier`…). The Compiler Plugin DSL functions themselves are in `koin-core`.
 - **`koin-dagger-bridge`** — lets Koin definitions resolve Dagger / Hilt
-  bindings (`Scope.dagger<T>()`), for progressive migration and for apps that
+  bindings (`dagger<T>()` on a Hilt `@EntryPoint` interface `T`), for progressive migration and for apps that
   keep both containers. See the `di-migration` skill.
 - **KMP** — one plugin, no per-target configuration.
 - **Compiler Plugin options** (optional, defaults are fine):

@@ -70,26 +70,31 @@ When the binding migrates into Koin, delete the bridge function and the
 
 Several consumers need the same bridge → "Bridging with the existing DI" in the `di-migration` SKILL.md.
 
-### Option C — `Scope.dagger<T>()` helper (for Compiler Plugin DSL modules)
+### Option C — `dagger<T>()` from `koin-dagger-bridge` (for Compiler Plugin DSL modules)
 
 If your migration output style is Compiler Plugin DSL (`module { }` blocks) rather than
-annotations, a scope helper is cleaner than a function bridge:
+annotations, use the bridge's `Scope.dagger<T>()` (`org.koin.android.dagger.dagger`) —
+don't redefine it. **`T` is a Hilt `@EntryPoint` interface, not the binding:**
+`dagger<T>()` returns the entry point; call its accessor to get the binding.
+
+Inside the feature's own Koin `module { }` (same co-location principle):
 
 ```kotlin
-inline fun <reified T> Scope.dagger(): T =
-    EntryPoints.get(androidContext().applicationContext, T::class.java)
-```
+import org.koin.android.dagger.dagger
 
-Used inside the feature's own Koin `module { }` (same co-location principle):
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface UserDataEntryPoint {
+    fun userDataRepository(): UserDataRepository
+}
 
-```kotlin
 val settingsModule = module {
-    single<SettingsRepository> { SettingsRepositoryImpl(dagger<SomeHiltBinding>()) }
+    single { dagger<UserDataEntryPoint>().userDataRepository() }
+    viewModel<SettingsViewModel>()
 }
 ```
 
-Requires an `@EntryPoint` interface exposing the binding, and `androidContext(...)`
-configured in `startKoin { }`. Every `dagger<T>()` call is a migration TODO —
+Requires `androidContext(...)` configured in `startKoin { }`. Every `dagger<T>()` call is a migration TODO —
 remove when the target moves into Koin. Keep `dagger<T>()` calls inside the
 consumer module to stay friendly with A1 verification.
 
