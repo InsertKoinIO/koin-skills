@@ -6,14 +6,14 @@
 1. [Progressive Migration](#progressive-migration)
 2. [Core Concept Mapping](#core-concept-mapping)
 3. [Gradle Changes](#gradle-changes)
-3. [Scope Tree → Koin Scopes](#scope-tree)
-4. [Module Conversion](#module-conversion)
-5. [Injection Patterns](#injection-patterns)
-6. [Scope Lifecycle](#scope-lifecycle)
-7. [Providers and Lazy](#providers-and-lazy)
-8. [ViewModel Migration](#viewmodel-migration)
-9. [Testing](#testing)
-10. [Migration Checklist](#migration-checklist)
+4. [Scope Tree → Koin Scopes](#scope-tree)
+5. [Module Conversion](#module-conversion)
+6. [Injection Patterns](#injection-patterns)
+7. [Scope Lifecycle](#scope-lifecycle)
+8. [Providers and Lazy](#providers-and-lazy)
+9. [ViewModel Migration](#viewmodel-migration)
+10. [Testing](#testing)
+11. [Migration Checklist](#migration-checklist)
 
 ---
 
@@ -23,15 +23,9 @@ Do **not** rewrite Toothpick scopes in place. Create a new Koin module alongside
 the existing Toothpick scope tree, move bindings one feature/scope at a time,
 keep both running until the root `Toothpick.openRootScope()` is gone.
 
-For Toothpick-owned bindings consumed from a Koin definition during the bridging
-window, write a `Scope.toothpick<T>()` helper that delegates to the live
-Toothpick scope (`Toothpick.openScope(scope).getInstance(T::class.java)`) — same
-pattern as `Scope.dagger<T>()` in `hilt-to-koin.md`.
-
-**Co-locate bridge helpers in the consumer module** (or its `@Module @Configuration`
-class for annotations output) — strict A1 verification then stays green and no
-compile-check relaxation is needed. See SKILL.md → "Bridging with the existing DI"
-for the full rationale.
+Koin definitions read bindings still owned by Toothpick through a
+`Scope.toothpick<T>()` helper, co-located in the consumer module —
+`references/bridging.md`.
 
 ---
 
@@ -54,7 +48,7 @@ for the full rationale.
 | `bind(X).withName(Named("n"))`    | `@Named("n")` on binding                             |
 | `Toothpick.inject(this, scope)`   | Remove — use `by inject()` delegate                  |
 | `@InjectConstructor`              | `@Factory` on the class (new instance per injection)    |
-| `ScopeSingleton`                  | `@Scope(T::class)` + class annotation                |
+| `ScopeSingleton`                  | `@Scope(T::class)` + `@Scoped`, or a scope archetype (`@ActivityScope`…) |
 | `Releasable`                      | Not needed — `scope.close()` handles cleanup          |
 | `smoothie` (Android lifecycle)    | Koin scope archetypes: `@ActivityScope`, `@FragmentScope` |
 | Custom `@Qualifier`               | **Reuse as-is** — works directly with Koin Compiler |
@@ -63,7 +57,11 @@ for the full rationale.
 
 ## Gradle Changes
 
-### Step 1: Remove Toothpick
+### Add Koin + Compiler Plugin (Step 3)
+
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3. Toothpick stays in place.
+
+### Remove Toothpick — Step 8, after the last binding moved
 
 ```kotlin
 // REMOVE from build.gradle.kts
@@ -79,11 +77,6 @@ dependencies {
     // testImplementation("com.github.stephanenicolas.toothpick:toothpick-testing-junit5:3.x")
 }
 ```
-
-### Step 2: Add Koin + Compiler Plugin
-
-Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
-
 
 ## Scope Tree
 
@@ -192,7 +185,7 @@ class DetailFragment : Fragment(), AndroidScopeComponent {
 
 Key differences:
 - Toothpick's hierarchical lookup (child sees parent bindings) → Koin `@Singleton` bindings are globally visible
-- Scoped bindings use `@Scope(T::class)` and are only accessible within that scope
+- Scoped bindings use a scope archetype (`@ActivityScope`, `@FragmentScope` from `org.koin.android.annotation`) or `@Scope(T::class)` + `@Scoped`, and are only accessible within that scope
 - No manual `inject(this, scope)` call — Koin delegates handle injection automatically
 - No manual `closeScope()` — `AndroidScopeComponent` + `activityScope()` / `fragmentScope()` ties the scope to the Android lifecycle
 
@@ -233,7 +226,7 @@ with @Provides" in `references/dagger-to-koin.md`. Then:
 // ApiServiceImpl can be annotated directly since you own it
 @Singleton
 class ApiServiceImpl(private val retrofit: Retrofit) : ApiService
-// Auto-bind: single interface → compiler detects ApiService binding automatically
+// Auto-bind: the compiler binds ApiService, the interface it implements
 
 // RetrofitProvider class is no longer needed — @Module function replaces it
 ```
@@ -282,7 +275,7 @@ class PresenterModule : Module() {
 // AFTER: Koin — annotate the implementation
 @Factory
 class DetailPresenterImpl(private val repo: ItemRepository) : DetailPresenter
-// Auto-bind: single interface → compiler detects DetailPresenter binding automatically
+// Auto-bind: the compiler binds DetailPresenter, the interface it implements
 ```
 
 ## Injection Patterns
@@ -364,7 +357,7 @@ class ChatActivity : AppCompatActivity() {
 
 ```kotlin
 // AFTER: Koin — scope tied to Activity lifecycle automatically
-@Scope(ChatActivity::class)
+@ActivityScope   // org.koin.android.annotation
 class ChatManager(private val api: ApiService)
 
 class ChatActivity : AppCompatActivity(), AndroidScopeComponent {
@@ -395,9 +388,11 @@ KTP.closeScope(ScopeNames.USER_SESSION)
 class UserSessionScope  // Scope marker
 
 @Scope(UserSessionScope::class)
+@Scoped
 class SessionManager(private val api: ApiService)
 
 @Scope(UserSessionScope::class)
+@Scoped
 class UserPreferences(private val db: AppDatabase)
 
 // Open on login
@@ -426,19 +421,22 @@ class MyService @Inject constructor(
 ```
 
 ```kotlin
-// AFTER: Koin — Lazy<T> natively supported by compiler plugin
-@Singleton
+// AFTER: Koin — unscoped @Inject constructor → @Factory
+@Factory
 class MyService(
-    private val heavyDep: Lazy<HeavyDependency>,    // kotlin.Lazy — auto-resolved
-    private val lightDepFactory: () -> LightDependency  // lambda for factory
+    private val heavyDep: Lazy<HeavyDependency>,   // kotlin.Lazy — resolved on first access
+    private val scope: Scope                        // org.koin.core.scope.Scope — passed as-is
 ) {
     fun doWork() {
-        val heavy = heavyDep.value       // kotlin.Lazy
-        val light = lightDepFactory()    // new instance each call
+        val heavy = heavyDep.value
+        val light = scope.get<LightDependency>()    // new instance each call (@Factory LightDependency)
     }
 }
-// The compiler plugin validates Lazy<T> inner types at compile time
 ```
+
+`() -> T` and `Provider<T>` parameters aren't resolved by the Compiler Plugin;
+`scope.get<T>()` is a service locator that needs the user's OK — see "Lazy and
+Provider" in `references/dagger-to-koin.md`.
 
 ## ViewModel Migration
 
@@ -550,8 +548,8 @@ class UserRepositoryTest : KoinTest {
 - [ ] Remove all Toothpick `Module` subclasses → replace with `@Module` classes
 - [ ] Remove custom `ViewModelProvider.Factory` → use `@KoinViewModel`
 - [ ] Remove `smoothie` dependency if used for lifecycle scoping
-- [ ] Remove `@ScopeAnnotation` annotations → replace with `@Scope(T::class)`
-- [ ] Remove `Provider<T>` usage → replace with lambda `() -> T` or Koin `get()`
+- [ ] Remove `@ScopeAnnotation` annotations → replace with a scope archetype or `@Scope(T::class)` + `@Scoped`
+- [ ] Remove `Provider<T>` usage → `Lazy<T>`, or (with the user's OK, service locator) `@Factory` + `scope.get<T>()` for a fresh instance per call
 - [ ] Remove `Releasable` implementations → `scope.close()` handles cleanup
 - [ ] Verify no remaining imports from `toothpick.*` packages
-- [ ] Koin compiler plugin verifies dependency graph at compile time
+- [ ] Every `toothpick<T>()` bridge removed; Toothpick deps removed (Step 8)

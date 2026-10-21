@@ -6,14 +6,14 @@
 1. [Progressive Migration](#progressive-migration)
 2. [Core Concept Mapping](#core-concept-mapping)
 3. [Gradle Changes](#gradle-changes)
-3. [Component → Module Conversion](#component-to-module)
-4. [Subcomponents → Scopes](#subcomponents-to-scopes)
-5. [Injection Patterns](#injection-patterns)
-6. [Qualifiers](#qualifiers)
-7. [Multibindings](#multibindings)
-8. [Component Dependencies](#component-dependencies)
-9. [Custom Scopes](#custom-scopes)
-10. [Lazy and Provider](#lazy-and-provider)
+4. [Component → Module Conversion](#component-to-module)
+5. [Subcomponents → Scopes](#subcomponents-to-scopes)
+6. [Injection Patterns](#injection-patterns)
+7. [Qualifiers](#qualifiers)
+8. [Multibindings](#multibindings)
+9. [Component Dependencies](#component-dependencies)
+10. [Custom Scopes](#custom-scopes)
+11. [Lazy and Provider](#lazy-and-provider)
 
 ---
 
@@ -23,98 +23,10 @@ Do **not** rewrite existing Dagger components in place. Create a new empty Koin
 module alongside the Dagger graph, move definitions one feature at a time, keep
 both running side by side until the last `@Component` is gone.
 
-Unlike Hilt, Dagger 2 has no generic entry-point accessor — resolution goes
-through your own `@Component` interface methods. This makes the annotation-style
-bridge (a `@Singleton fun` inside a `@Module @Configuration` class) the natural
-choice; the Compiler Plugin DSL `Scope.dagger<T>()` helper from `hilt-to-koin.md` doesn't
-translate cleanly.
-
-### Bridge — co-locate `@Singleton fun` in the consumer feature's `@Module`
-
-**Put the bridge function inside the feature module that consumes the Dagger
-binding — not in a shared aggregator.** The Koin Compiler Plugin's A1
-per-module verification checks each `@Module` in isolation; if the bridge
-lives in a sibling module it's invisible to the consumer's A1 pass and you'd
-be forced to relax the graph check. Co-location keeps strict A1 green.
-
-Expose each bridged binding as a method on your existing `AppComponent`, retain
-the component instance on the Application, and delegate from each feature
-module that consumes it:
-
-```kotlin
-// Step 1 — your existing Dagger component, augmented with bridge methods
-@Component(modules = [NetworkModule::class, DatabaseModule::class])
-@Singleton
-interface AppComponent {
-    fun userDataRepository(): UserDataRepository
-    fun analyticsTracker(): AnalyticsTracker
-    // ...other bindings that need to bridge into Koin
-
-    @Component.Factory
-    interface Factory {
-        fun create(@BindsInstance context: Context): AppComponent
-    }
-}
-
-// Step 2 — Application owns both graphs during migration
-import org.koin.plugin.module.dsl.startKoin
-
-@KoinApplication
-class App : Application() {
-    lateinit var appComponent: AppComponent
-        private set
-
-    override fun onCreate() {
-        super.onCreate()
-        appComponent = DaggerAppComponent.factory().create(this)   // Dagger first
-        startKoin<App> { androidContext(this@App) }                 // Koin after — order matters
-    }
-}
-
-// Step 3 — each feature module declares the bridges it needs, inline
-@Module
-@Configuration
-@ComponentScan("com.acme.feature.settings")
-class SettingsFeatureModule {
-
-    // Bridge function lives in the consumer module — A1-friendly
-    @Singleton
-    fun userDataRepository(context: Context): UserDataRepository =
-        (context.applicationContext as App).appComponent.userDataRepository()
-}
-
-@Module
-@Configuration
-@ComponentScan("com.acme.feature.dashboard")
-class DashboardFeatureModule {
-
-    @Singleton
-    fun analyticsTracker(context: Context): AnalyticsTracker =
-        (context.applicationContext as App).appComponent.analyticsTracker()
-}
-```
-
-**Ordering:** `DaggerAppComponent.factory().create(this)` must run before
-`startKoin<App>`, so the Dagger graph is live when a Koin-managed class first
-calls `appComponent.userDataRepository()`.
-
-Track each bridge function as a migration TODO — delete when the target
-binding moves into Koin. Remove the component methods from `AppComponent` in
-lockstep. When the last bridge function is gone, the `@Component` interface,
-the `AppComponent` field on `App`, and the `DaggerAppComponent.create(...)`
-call in `onCreate()` all disappear together.
-
-Several consumers need the same bridge → "Bridging with the existing DI" in the `di-migration` SKILL.md.
-
-### Compile-time graph check
-
-With co-located bridges, strict A1 verification stays green — each consumer
-module has its bridge function locally declared. You only need to relax the
-graph check if you deliberately choose a shared aggregator module pattern
-instead (which adds a configuration burden without benefit; prefer
-co-location).
-
-### Convention plugin classpath
+Dagger 2 has no generic entry-point accessor: Koin reads Dagger bindings through
+a `@Singleton fun` over your own `@Component` methods, co-located in the
+consumer's `@Module` — `koin-dagger-bridge` is Hilt-only. Pattern, startup
+ordering and cleanup: `references/bridging.md`.
 
 Gradle convention plugins: see "Convention plugins" in `references/gradle.md`.
 
@@ -139,7 +51,11 @@ Gradle convention plugins: see "Convention plugins" in `references/gradle.md`.
 
 ## Gradle Changes
 
-### Step 1: Remove Dagger
+### Add Koin + Compiler Plugin (Step 3)
+
+Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3. Dagger stays in place.
+
+### Remove Dagger — Step 8, after the last binding moved
 
 ```kotlin
 // REMOVE from build.gradle.kts
@@ -155,11 +71,6 @@ dependencies {
     // ksp("com.google.dagger:dagger-compiler:2.x")
 }
 ```
-
-### Step 2: Add Koin + Compiler Plugin
-
-Add Koin per `references/gradle.md` — Compiler Plugin, `koin-bom`, only the artifacts the project needs (KMP: shared artifacts in `commonMain`, no per-target configuration). Versions: `references/rules.md` §3.
-
 
 ## Component to Module
 
@@ -242,7 +153,7 @@ class RepoImpl(
     private val api: ApiService,
     private val dao: UserDao
 ) : Repo
-// Auto-bind: single interface → compiler detects Repo binding automatically
+// Auto-bind: the compiler binds Repo, the interface it implements
 ```
 
 ## Subcomponents to Scopes
@@ -274,9 +185,11 @@ interface AppComponent {
 class SessionScopeId  // Scope marker
 
 @Scope(SessionScopeId::class)
+@Scoped
 class SessionManager(private val api: ApiService)
 
 @Scope(SessionScopeId::class)
+@Scoped
 class DashboardRepository(private val api: ApiService, private val db: AppDatabase)
 
 // Open scope when session starts
@@ -374,7 +287,7 @@ class DispatcherModule {
     fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
 }
 
-@Singleton
+@Factory   // unscoped @Inject constructor → @Factory
 class MyRepo(@Named("io") private val dispatcher: CoroutineDispatcher)
 ```
 
@@ -390,7 +303,7 @@ class DispatcherModule {
     fun provideIo(): CoroutineDispatcher = Dispatchers.IO
 }
 
-@Singleton
+@Factory
 class MyRepo(@IoDispatcher private val dispatcher: CoroutineDispatcher)
 ```
 
@@ -494,12 +407,19 @@ class MyClass @Inject constructor(
 ```
 
 ```kotlin
-// AFTER: Koin — Lazy<T> auto-resolved by compiler plugin
-@Singleton
+// AFTER: Koin — unscoped @Inject constructor → @Factory
+@Factory
 class MyClass(
-    private val lazyService: Lazy<HeavyService>,       // kotlin.Lazy — auto-resolved
-    private val lightServiceProvider: () -> LightService // lambda for factory-like behavior
-)
-
-// Note: For Lazy<T>, the Koin compiler plugin validates the inner type at compile time
+    private val lazyService: Lazy<HeavyService>,   // kotlin.Lazy — resolved on first access
+    private val scope: Scope                        // org.koin.core.scope.Scope — passed as-is
+) {
+    fun work() = scope.get<LightService>().run()   // fresh instance per call (@Factory LightService)
+}
 ```
+
+The Compiler Plugin resolves `Lazy<T>`, `List<T>`, `T?` and `Scope` parameters —
+not `() -> T` or `Provider<T>`. `Provider<T>` used to defer creation → `Lazy<T>` (the default);
+used for a fresh instance per call → `@Factory` on the type and `scope.get<T>()`
+at the use site. That second form is a **service locator** in a normal class:
+the dependency isn't compile-checked — state the cost and get the user's OK
+first (`references/rules.md` §8).

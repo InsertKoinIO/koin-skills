@@ -3,23 +3,34 @@
 > **Setup & versions** — Gradle: `references/gradle.md` · versions: `references/rules.md` §3 · exact syntax: `references/koin-annotations.md` / `references/koin-compiler-plugin-dsl.md`.
 
 ## Table of Contents
-1. [Why Migrate](#why-migrate)
-2. [Core DSL Mapping](#core-dsl-mapping)
-3. [Gradle Setup](#gradle-setup)
-4. [Singleton and Factory](#singleton-and-factory)
-5. [ViewModel](#viewmodel)
-6. [Qualifiers and Named](#qualifiers-and-named)
-7. [Scopes](#scopes)
-8. [Bindings (Interface → Implementation)](#bindings)
-9. [Parameters](#parameters)
-10. [Module Composition](#module-composition)
-11. [KMP Modules](#kmp-modules)
-12. [Compose Integration](#compose-integration)
-13. [Mixing Old and New DSL](#mixing-old-and-new-dsl)
-14. [Compile-Time Safety](#compile-time-safety)
-15. [Common Pitfalls](#common-pitfalls)
+1. [Progressive Migration](#progressive-migration)
+2. [Why Migrate](#why-migrate)
+3. [Core DSL Mapping](#core-dsl-mapping)
+4. [Gradle Setup](#gradle-setup)
+5. [Singleton and Factory](#singleton-and-factory)
+6. [ViewModel](#viewmodel)
+7. [Qualifiers and Named](#qualifiers-and-named)
+8. [Scopes](#scopes)
+9. [Bindings (Interface → Implementation)](#bindings)
+10. [Parameters](#parameters)
+11. [Module Composition](#module-composition)
+12. [KMP Modules](#kmp-modules)
+13. [Compose Integration](#compose-integration)
+14. [Mixing Old and New DSL](#mixing-old-and-new-dsl)
+15. [Compile-Time Safety](#compile-time-safety)
+16. [Common Pitfalls](#common-pitfalls)
 
 ---
+
+## Progressive Migration
+
+1. **Whole project, once (Step 3)** — Compiler Plugin + BOM. Classic and
+   Constructor DSL keep compiling and running unchanged.
+2. **Module by module (loop)** — move each module's definitions to Compiler
+   Plugin DSL, validated before the next. Old and new forms coexist meanwhile
+   ("Mixing Old and New DSL").
+
+Nothing is rewritten in place in one pass.
 
 ## Why Migrate
 
@@ -365,8 +376,9 @@ val module = module {
 // Usage: get<Notification> { parametersOf("title") }
 ```
 
-`@InjectedParam` is the **only annotation needed on classes** in the Compiler Plugin DSL approach.
-It tells the compiler "this parameter comes from `parametersOf()`, not from the graph."
+`@InjectedParam` and `@Named` / `@Qualifier` are the only annotations needed on classes in the
+Compiler Plugin DSL approach. `@InjectedParam` tells the compiler "this parameter comes from
+`parametersOf()`, not from the graph."
 
 ### Nullable dependencies
 
@@ -479,7 +491,9 @@ Recommended migration order:
 1. Start with leaf classes (simple constructors, no custom logic)
 2. Move to ViewModels (biggest compile-safety win)
 3. Then repositories and data layer
-4. Keep lambda syntax for third-party types and builder patterns (these can't use reified type)
+4. Third-party types and builders → function builder `single { create(::buildX) }`
+   (`references/rules.md` §1); classic lambda only for a custom expression — it's
+   compile-checked too
 
 ## Parameter Resolution
 
@@ -590,22 +604,22 @@ Without `id("io.insert-koin.compiler.plugin")`, Compiler Plugin DSL code (`singl
 time. Apply the plugin in every Gradle module that declares Koin definitions
 (`references/gradle.md`).
 
-### 5. Mixing scopes incorrectly
+### 5. ViewModel declared in its own scope without the scope factory
+
+`viewModel<T>()` inside `viewModelScope { }` is valid — it needs
+`options(viewModelScopeFactory())` at start (`references/scopes.md`):
 
 ```kotlin
-// WRONG — viewModel<T>() inside a scope block
 val module = module {
-    scope<UserSession> {
-        viewModel<SessionViewModel>()  // ViewModels should be top-level
+    viewModelScope {
+        scoped<SessionCache>()
+        viewModel<SessionViewModel>()
     }
 }
 
-// RIGHT — use scoped<T>() inside scope blocks, viewModel<T>() at top level
-val module = module {
-    viewModel<SessionViewModel>()  // Top-level
-    scope<UserSession> {
-        scoped<SessionManager>()
-    }
+startKoin {
+    options(viewModelScopeFactory())
+    modules(module)
 }
 ```
 

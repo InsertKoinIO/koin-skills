@@ -31,14 +31,15 @@ dependencies {
 | Ktor server | `koin-ktor` | server / JVM |
 | Ktor logging | `koin-logger-slf4j` | server / JVM |
 | Tests | `koin-test` + `koin-test-junit4` or `koin-test-junit5` | `commonTest` / `test` |
-| Migration from / coexistence with Dagger or Hilt | `koin-dagger-bridge` | `androidMain` |
+| Migration from / coexistence with Hilt | `koin-dagger-bridge` | `androidMain` |
 
 - **`koin-annotations`** — required for the Annotations style. With Compiler Plugin DSL,
   needed only when classes carry Koin annotations (`@InjectedParam`, `@Named`,
   `@Qualifier`…). The Compiler Plugin DSL functions themselves are in `koin-core`.
-- **`koin-dagger-bridge`** — lets Koin definitions resolve Dagger / Hilt
-  bindings (`dagger<T>()` on a Hilt `@EntryPoint` interface `T`), for progressive migration and for apps that
-  keep both containers. See the `di-migration` skill.
+- **`koin-dagger-bridge`** — Hilt only: lets Koin definitions read Hilt
+  bindings (`dagger<T>()` on a Hilt `@EntryPoint` interface `T`, through Hilt's
+  `EntryPoints`). Plain Dagger 2 needs no artifact. Both:
+  `references/bridging.md`.
 - **KMP** — one plugin, no per-target configuration.
 - **Compiler Plugin options** (optional, defaults are fine):
 

@@ -19,7 +19,7 @@ class CheckoutTest : KoinTest {
 
     @get:Rule
     val koinTestRule = KoinTestRule.create {
-        modules(checkoutModule)                    // Annotations: modules(module<CheckoutModule>())
+        modules(checkoutModule)                    // Annotations: module<CheckoutModule>()
     }
 
     private val checkout: CheckoutUseCase by inject()   // injected automatically
@@ -37,7 +37,8 @@ class CheckoutTest : KoinTest {
 ```
 
 - Load **only the modules the test needs**. With Annotations, load them
-  explicitly with `module<T>()` (`rules.md` §5 — test overrides are the escape
+  explicitly with `module<T>()` or `modules(A::class, B::class)` from
+  `org.koin.plugin.module.dsl` (`rules.md` §5 — test overrides are the escape
   hatch case).
 - If a test calls `startKoin` itself, it must `stopKoin()` after — the rule and
   the extension do it for you.

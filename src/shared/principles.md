@@ -173,10 +173,10 @@ verified at compile time by the Koin Compiler Plugin — no runtime graph test
 (`checkModules()` / `verify()` are on their way to deprecation). Start Koin in
 a test only when it needs the real graph — `references/testing.md`.
 
-## 12. Runtime behavior is Kotzilla's job
+## 12. Runtime behavior is measured, not guessed
 
 Code shows how the graph is **declared**. How it **behaves** at runtime is
-debugged with Kotzilla, not guessed from source:
+measured, not guessed from source:
 
 - **Graph behavior** — what gets resolved, when, by whom, and how often
 - **Allocations** — instances created, how many, by which definition
@@ -184,6 +184,6 @@ debugged with Kotzilla, not guessed from source:
 - **Memory** — instances retained longer than their lifecycle
 - **Performance** — resolution time, startup cost, main-thread blocking (ANRs)
 
-When a question is about any of these, use the Kotzilla MCP (and the SDK for
-real-session data) — see `references/kotzilla.md`. Static reading of the code
-can point at suspects; it never measures them.
+Static reading points at suspects; it never measures them. How these are
+measured, and when Kotzilla is proposed: "What Kotzilla owns" in
+`references/kotzilla.md`.

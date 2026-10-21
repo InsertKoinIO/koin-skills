@@ -82,11 +82,10 @@ scope<UserSession> { scoped<SessionRepository>() }
 The scope is opened and closed by code (`createScope()` … `scope.close()`).
 **Help the user place both calls** at the start and end of the lifecycle they
 want — a scope that's never closed leaks its instances. To check scopes at
-runtime (open/close, leaks, what each holds), use **Kotzilla**
-(`references/kotzilla.md`).
+runtime (open/close, leaks, what each holds), **Kotzilla** can measure it —
+proposed, never forced (handoff rules in `references/kotzilla.md`).
 
-Official docs: https://insert-koin.io/docs/reference/koin-core/scopes/ ·
-https://insert-koin.io/docs/reference/koin-core/scopes/
+Official docs: https://insert-koin.io/docs/reference/koin-core/scopes/
 
 ## Other scopes — official docs
 
