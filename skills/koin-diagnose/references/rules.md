@@ -19,8 +19,8 @@ Koin supports two styles, both compiled by the Koin Compiler Plugin:
   Prefer `@Singleton` over `@Single`.
 - **Koin DSL** — `module { }` blocks; keeps DI out of the code (no annotations
   on classes, wiring kept separate). Three forms, all compiled **and
-  compile-time checked** by the Compiler Plugin (since 1.2.x — including
-  `singleOf(::T)` and the `get()` calls inside lambdas):
+  compile-time checked** by the Compiler Plugin (including `singleOf(::T)` and
+  the `get()` calls inside lambdas):
 
   | Form | Example | Use when |
   |---|---|---|
@@ -31,8 +31,9 @@ Koin supports two styles, both compiled by the Koin Compiler Plugin:
   Pick by the **definition expression**: a plain constructor → Compiler Plugin DSL
   (with the Compiler Plugin); anything custom → function builder or classic
   lambda. Classic and Constructor DSL are valid Koin — write them when needed, and
-  don't rewrite existing code unless the user asks (`di-migration` covers
-  DSL → Compiler Plugin DSL).
+  don't rewrite existing code unless the user asks. Converting existing DSL to
+  Compiler Plugin DSL is a style choice (`di-migration`), not what makes the
+  graph compile safe — the plugin does that for every form.
 
 **The style is a project decision.** Make it explicit: state the style before
 writing code (detect it in an existing project, ask in a new one) and keep to
@@ -57,7 +58,8 @@ Within either style:
 ## 2. Compiler Plugin recommended, Koin KSP never
 
 The Koin Compiler Plugin (`id("io.insert-koin.compiler.plugin")`) is the
-**recommended default**: it makes the graph compile safe (§6). Recommend it in
+**recommended default**: it makes the graph compile safe (§6), whatever the
+style or DSL form — adding it is a Gradle change, no module rewrite. Recommend it in
 every setup and migration, and say what it brings — but it's the user's
 choice, not a requirement. The user declines → Koin DSL without the plugin
 (constructor or classic forms, §1); Annotations need the plugin, so they're off
@@ -156,11 +158,11 @@ The graph is assembled explicitly.
   // commonMain
   fun initApp(config: KoinAppDeclaration? = null) = startKoin {
       config?.invoke(this)
-      modules(appModule)          // Annotations style: startKoin<App> { config?.invoke(this) }
+      modules(appModule)          // Annotations style: startKoin<KoinApp> { config?.invoke(this) }
   }
 
   // androidMain — Application.onCreate()
-  initApp { androidContext(this@App) }
+  initApp { androidContext(this@MainApplication) }
   ```
 
 - **Logger** — only when needed: `androidLogger()` when starting on Android,
@@ -173,7 +175,9 @@ Each module keeps one style. Annotated and DSL modules load in the same
 
 ## 6. Graph verification is compile-time
 
-The Koin Compiler Plugin checks the graph at build time. Don't write
+The Koin Compiler Plugin checks the graph at build time, in two ways: the
+**full graph** at the Koin entry point (`startKoin` / `@KoinApplication`) and
+every **call site** (`get()`, `inject()`, `koinViewModel()`…). Don't write
 `checkModules()` / `verify()` tests — both are on their way to deprecation in
 favor of the Compiler Plugin. Without the plugin (the user's choice, §2) there
 is no compile-time check: verify by building, then running the paths that

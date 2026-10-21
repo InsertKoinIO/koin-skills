@@ -308,6 +308,6 @@ val koinTestRule = KoinTestRule.create {
 }
 ```
 
-Graph verification: the **Koin Compiler Plugin's A1/A2/A3 layers** catch missing
-bindings at compile time. Don't add `checkModules { }` / `verify()` — both are on
-their way to deprecation.
+Graph verification: the **Koin Compiler Plugin** checks the full graph and the
+resolution call sites at compile time, catching missing bindings. Don't add
+`checkModules { }` / `verify()` — both are on their way to deprecation.

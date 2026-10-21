@@ -37,14 +37,14 @@ Gradle convention plugins: see "Convention plugins" in `references/gradle.md`.
 | Dagger 2 Concept              | Koin Compiler Plugin Equivalent                    |
 |-------------------------------|-----------------------------------------------------|
 | `@Component`                  | `@Module` + `@KoinApplication` + `startKoin<T>()`  |
-| `@Subcomponent`               | `@Scope(T::class)` with `@Scoped` bindings         |
+| `@Subcomponent`               | A scope archetype (`@ActivityScope`…) when it follows that lifecycle; otherwise `@Scope(T::class)` + `@Scoped` |
 | `@Module` + `@Provides`       | `@Module` class with `@Singleton`/`@Factory` functions |
 | `@Module` + `@Binds`          | `@Singleton` on impl (auto-binds to interface)          |
 | `@Inject constructor`         | `@Factory` on class (new instance per injection)        |
 | `@Singleton`                  | `@Singleton`                                            |
 | `@Reusable`                   | `@Singleton` (closest approximation)                   |
-| `@Component.Factory`          | Not needed — `startKoin { }` handles init           |
-| `@Component.Builder`          | Not needed — module params via `@InjectedParam`     |
+| `@Component.Factory` / `@Component.Builder` | `startKoin { }`; each `@BindsInstance` argument → a startup value: `androidContext`, `koin.declare` + `@Provided`, or `@Property` ("Values known at startup" in `references/entry-points.md`) |
+| `@Subcomponent.Factory` argument | A value declared into the scope when it opens ("Scope with a runtime value" in `references/scopes.md`) |
 | `MembersInjector`             | `by inject()` delegate or `get()` direct            |
 | Custom `@Qualifier`           | **Reuse as-is** — works directly with Koin Compiler |
 | JSR-330 (`javax.inject.*`)    | **Supported** — `@Inject`, `@Singleton`, `@Named`, `@Qualifier` |
@@ -158,7 +158,9 @@ class RepoImpl(
 
 ## Subcomponents to Scopes
 
-Dagger subcomponents model a lifecycle hierarchy. In Koin, use `@Scope`:
+Dagger subcomponents model a lifecycle hierarchy. In Koin: the scope archetype when the
+subcomponent follows an Activity, Fragment or ViewModel, otherwise a custom `@Scope`
+("Choose the scope" in `references/scopes.md`). A session subcomponent → a custom scope:
 
 ```kotlin
 // BEFORE: Dagger
@@ -201,6 +203,10 @@ val manager = sessionScope.get<SessionManager>()
 // Close when session ends
 sessionScope.close()
 ```
+
+A `@Subcomponent.Factory` that takes arguments (`create(@BindsInstance userId: String)`)
+→ declare them into the scope as it opens, and give the scope one owner that
+closes the previous one: "Scope with a runtime value" in `references/scopes.md`.
 
 ## Injection Patterns
 
@@ -309,6 +315,21 @@ class MyRepo(@IoDispatcher private val dispatcher: CoroutineDispatcher)
 
 ## Multibindings
 
+Koin has no Set / Map multibinding. One pattern for every source: each element
+is its own definition bound to `T`, with a distinct `@Named` (without it each
+element overrides the previous `T` binding — a startup warning, an error with
+`allowOverride(false)`). Consumers inject `List<T>`: every definition of `T`,
+empty when there is none.
+
+| Source | Koin |
+|---|---|
+| `@IntoSet` / `@ContributesIntoSet` element | `@Singleton` / `@Factory` + `@Named("<element>")` on the class, auto-bound to `T` |
+| `@ElementsIntoSet` (several at once) | One definition per element, as above |
+| `Set<T>` consumer | `List<T>` parameter (`.toSet()` if a `Set` is needed) |
+| `@IntoMap` + `@StringKey` / `@ClassKey` (not a ViewModel) | Elements as above; consumer `List<T>` + `associateBy { it.key }` (`T` exposes its key). Key not on `T` → one `@Module` function taking the named elements, returning the `Map` |
+| `@IntoMap @ViewModelKey` | `@KoinViewModel` — below |
+| `@Multibinds` (declared, maybe empty) | Deleted — `List<T>` is empty when no element |
+
 ### Set multibinding
 
 ```kotlin
@@ -324,18 +345,15 @@ abstract class PluginModule {
 ```
 
 ```kotlin
-// AFTER: Koin — manual assembly in @Module
-@Singleton
+// AFTER: Koin — each element bound to Plugin, consumers take List<Plugin>
+@Singleton @Named("pluginA")
 class PluginA : Plugin { /* ... */ }
 
-@Singleton
+@Singleton @Named("pluginB")
 class PluginB : Plugin { /* ... */ }
 
-@Module
-class PluginModule {
-    @Singleton
-    fun providePlugins(a: PluginA, b: PluginB): Set<Plugin> = setOf(a, b)
-}
+@Singleton
+class PluginRegistry(private val plugins: List<Plugin>)   // was Set<Plugin>
 ```
 
 ### Map multibinding (ViewModel factory pattern)

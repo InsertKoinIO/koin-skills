@@ -83,7 +83,9 @@ state.
 4. **One dev run is a smoke test, not a measurement.** It proves the SDK is
    wired and shows this device's numbers — enough to see a lifetime or an
    instance count, not a timing trend. Rates and percentiles (ANR rate, P50/P95
-   cold start) need real traffic over days. Say so plainly.
+   cold start) need real traffic over days. Say so plainly. On an emulator,
+   before blaming a change for a slow start or an ANR: cold-boot it, skip the
+   first launch after install, compare with the previous build on it.
 5. **No session, not verified.** If no session arrives for the version under
    test, report the change as applied but **not verified**, and why. Never fill
    the gap by reasoning from the code.
@@ -100,7 +102,7 @@ each definition against its row; a mismatch is a finding.
 |---|---|
 | `single` / `@Singleton` | One instance per process, created on first use (or in `startKoin` with `createdAtStart`) |
 | `factory` / `@Factory` | A new instance per resolution — expected, not a leak |
-| `scoped` / `@Scoped` | One instance per open scope, released when the scope closes; no scope left open after its lifecycle ends |
+| `scoped` / `@Scoped` | One instance per open scope, released when the scope closes; no scope left open after its lifecycle ends. A scope opened off the main thread was seen missing from session views — then verify it with a test (`references/testing.md`) and say so |
 | `viewModel` / `@KoinViewModel` | One per ViewModel owner, cleared with it |
 | any | No issue flagged on it; no resolution on the main thread long enough to show as blocking |
 
@@ -109,11 +111,14 @@ resolves the definitions, then confirm the session arrived on the version the
 SDK **reports** (`get_platform_activity` — a debug suffix can change it). When
 a baseline exists — the same definitions on an earlier version, same device and
 build type — compare instance counts, lifetimes and resolution times with it.
+A version label per migration step (`kotzilla { versionName = "1.4.0-koin-step2" }`)
+keeps sessions apart without touching the store version.
 
 **Kotzilla sees Koin.** Instances created by another container (Hilt, Dagger,
-Toothpick, Kodein) or handed over through a bridge (`dagger<T>()`,
+Toothpick, Kodein, Metro) or handed over through a bridge (`dagger<T>()`,
 `koin-dagger-bridge`) are not tracked on the other side: their lifetime there
-can't be checked.
+can't be checked. The SDK still records app sessions and startup without Koin:
+an app-level baseline before migrating from any framework.
 
 ## Connect the MCP
 
@@ -142,3 +147,9 @@ Only after the user accepted the SDK (handoff rules). Then follow the MCP's
 own onboarding flow for the steps — its server instructions are the source of
 truth for the tools, not for consent. In short: `list_apps` → `guide_sdk_installation` → `create_app` →
 write the returned `kotzilla.json` verbatim → build and run.
+
+- Package already registered → ask: reuse that app or create one.
+- `kotzilla.json` holds an API key: in a public repo, flag it and propose
+  git-ignore + a CI secret; don't change it unasked.
+- iOS: the plugin can add a dSYM build phase to `project.pbxproj` — point it
+  out in the diff.

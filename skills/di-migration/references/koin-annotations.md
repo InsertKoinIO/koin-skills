@@ -21,7 +21,7 @@ can be **reused without changes** in Koin annotation output.
 | `@Singleton`, `@Single`, `@Factory`, `@KoinViewModel`                                               | `org.koin.core.annotation.*`                          | Binding annotations                                              |
 | `@KoinWorker`                                                                                       | `org.koin.android.annotation.KoinWorker`              | WorkManager Worker (Android)                                     |
 | `@KoinApplication`                                                                                  | `org.koin.core.annotation.*`                          | Application entry point                                          |
-| `@InjectedParam`, `@Named`, `@Property`, `@Qualifier`                                               | `org.koin.core.annotation.*`                          | Parameter / qualifier annotations                                |
+| `@InjectedParam`, `@Named`, `@Property`, `@Qualifier`, `@Provided`                                  | `org.koin.core.annotation.*`                          | Parameter / qualifier annotations                                |
 | `@Scope`, `@Scoped`                                                                                 | `org.koin.core.annotation.*`                          | Custom scope annotations                                         |
 | `@ViewModelScope`                                                                                   | `org.koin.core.annotation.*`                          | ViewModel scope archetype (common)                               |
 | `@ActivityScope`, `@ActivityRetainedScope`, `@FragmentScope`                                        | `org.koin.android.annotation.*`                       | Android scope archetypes                                         |
@@ -139,7 +139,8 @@ the compiler plugin's discovery wiring is bypassed.
 | `@InjectedParam`          | Constructor param              | Runtime values via `parametersOf(...)` at call site |
 | `@Named("auth")`          | Class or param                 | String qualifier                      |
 | `@Qualifier`              | On your own annotation         | Custom type-safe qualifier            |
-| `@Property("api.url")`    | Constructor param              | Inject Koin property value            |
+| `@Property("api.url")`    | Constructor param              | Inject Koin property value (file / environment values are `String`s) |
+| `@Provided`               | Param (also class, function)   | A value given at runtime (`declare`), not by a definition. Skipped by the compile-time check: never declared → runtime failure. On a class: every use of that type is externally provided |
 
 ```kotlin
 @Qualifier annotation class Auth
@@ -147,7 +148,15 @@ the compiler plugin's discovery wiring is bypassed.
 
 @Factory class Connection(@InjectedParam val url: String)
 // at call site: get<Connection> { parametersOf("https://...") }
+
+@Singleton class FeatureFlags(@Provided private val config: AppConfig)
+// at start: startKoin<App> { koin.declare(config) }
 ```
+
+`@InjectedParam` is a value per resolution; `@Provided` a value declared once
+for the app or a scope ("Values known at startup" in
+`references/entry-points.md`, "Scope with a runtime value" in
+`references/scopes.md`).
 
 ## Scopes
 

@@ -320,7 +320,7 @@ Koin provides **scope archetype annotations** that map directly to Android lifec
 | `ActivityComponent`          | `@ActivityScope`                                       | `activityScope { scoped { ... } }` |
 | `FragmentComponent`          | `@FragmentScope`                                       | `fragmentScope { scoped { ... } }` |
 | `ViewModelComponent`         | `@ViewModelScope`                                      | `viewModelScope { scoped { ... } }` |
-| `ServiceComponent`           | `@Scope(Service::class)` + `@Scoped`, or `@Factory`   | `scope<Service> { scoped { ... } }` |
+| `ServiceComponent`           | `@ServiceScoped` → `@Scope(MyService::class)` + `@Scoped`; unscoped (no instance shared across the service's lifetime) → `@Factory`, no scope | `scope<MyService> { scoped { ... } }` |
 | Custom `@DefineComponent`    | `@Scope(CustomType::class)` + `@Scoped`                | `scope<CustomType> { scoped { ... } }` |
 
 Koin side (archetype annotations, DSL, component usage, custom scopes): `references/scopes.md`.
@@ -355,8 +355,8 @@ val viewModel: PlayerViewModel by viewModel { parametersOf("player_123") }
 
 ## Multibindings
 
-Hilt multibindings (Set/Map) don't have a direct annotation equivalent.
-Use a `@Module` with a factory function:
+Same as Dagger — each element its own `@Named` definition bound to `T`,
+consumers inject `List<T>`: "Multibindings" in `references/dagger-to-koin.md`.
 
 ```kotlin
 // BEFORE: Hilt
@@ -369,24 +369,19 @@ abstract class InterceptorModule {
     @Binds @IntoSet
     abstract fun bindAuth(impl: AuthInterceptor): Interceptor
 }
+class OkHttpFactory @Inject constructor(private val interceptors: Set<@JvmSuppressWildcards Interceptor>)
 ```
 
 ```kotlin
 // AFTER: Koin
-@Singleton
+@Singleton @Named("logging")
 class LoggingInterceptor : Interceptor { /* ... */ }
 
-@Singleton
+@Singleton @Named("auth")
 class AuthInterceptor(private val tokenProvider: AuthTokenProvider) : Interceptor { /* ... */ }
 
-@Module
-class InterceptorModule {
-    @Singleton
-    fun provideInterceptors(
-        logging: LoggingInterceptor,
-        auth: AuthInterceptor
-    ): Set<Interceptor> = setOf(logging, auth)
-}
+@Factory
+class OkHttpFactory(private val interceptors: List<Interceptor>)
 ```
 
 ## WorkManager

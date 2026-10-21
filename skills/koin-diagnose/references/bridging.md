@@ -1,6 +1,6 @@
 # Bridging with an existing DI container
 
-Koin next to Hilt, Dagger, Toothpick or Kodein: during a migration
+Koin next to Hilt, Dagger, Toothpick, Kodein or Metro: during a migration
 (`di-migration`), or for an app that keeps both (`koin-setup`, `koin`).
 
 ## Principle
@@ -8,9 +8,9 @@ Koin next to Hilt, Dagger, Toothpick or Kodein: during a migration
 - **Koin reads what the old container still owns.** A bridge is a Koin
   definition whose body asks the old container for the instance.
 - **Co-locate the bridge in the consumer module** — the `@Module` or
-  `module { }` of the feature that needs it. The Compiler Plugin verifies each
-  module with what it declares or includes, so a local bridge keeps that check
-  green; a bridge in a sibling module doesn't.
+  `module { }` of the feature that needs it: it moves and disappears with that
+  feature. The Compiler Plugin checks the full graph at the Koin entry point
+  (`startKoin`), so the bridge must be in a module that graph loads.
 - **Promote on demand** — several consumers need the same bridge and the
   duplication hurts → one `SharedBridgeModule` (`@Module`, no `@Configuration`),
   pulled into each consumer with `@Module(includes = [SharedBridgeModule::class])`
@@ -75,6 +75,49 @@ class SettingsModule {
 ```
 
 Migrating: remove each accessor from `AppComponent` with its bridge.
+
+**KMP** — common code has no `Application` to cast: keep the component in a
+holder set by the shared start function before `startKoin` (`MetroBridge` in
+"Metro" below — same shape).
+
+## Metro
+
+No bridge library. The consumer feature declares the bindings it needs on an
+accessor interface contributed to the graph, the graph is kept in a holder set
+before `startKoin`, and the feature's bridge module reads it:
+
+```kotlin
+// :feature:settings — merged into AppGraph by Metro
+@ContributesTo(AppScope::class)
+interface SettingsMetroAccessors {
+    val userDataRepository: UserDataRepository
+}
+
+// a module every feature sees
+object MetroBridge { lateinit var graph: Any }
+
+// :feature:settings — TODO Koin migration: delete each fun when its binding moves
+@Module
+class MetroBridgeModule {
+    @Singleton   // @Factory when the Metro binding has no @SingleIn
+    fun userDataRepository(): UserDataRepository =
+        (MetroBridge.graph as SettingsMetroAccessors).userDataRepository
+}
+
+@Module(includes = [MetroBridgeModule::class]) @Configuration @ComponentScan("com.acme.feature.settings")
+class SettingsModule
+
+// commonMain — shared start: the graph first, then Koin
+@KoinApplication object KoinApp
+
+fun initApp(appGraph: AppGraph) {
+    MetroBridge.graph = appGraph
+    startKoin<KoinApp>()
+}
+```
+
+Metro reads Koin: the provider of "The other direction" below, as a `@Provides`
+in a `@BindingContainer @ContributesTo(AppScope::class)`.
 
 ## Toothpick and Kodein — a scope helper
 

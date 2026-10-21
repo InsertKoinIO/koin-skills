@@ -10,11 +10,10 @@ description: >
   modules, entry points, scopes, Koin tests, and pushing back on DI mistakes (a
   ViewModel as single, an Activity in a singleton, I/O in a constructor). Koin
   APIs: koinViewModel, koinInject, by inject, @KoinViewModel, single<T>(). On Koin
-  KSP, Koin 3.x or without the Compiler Plugin (AGP, Kotlin or Gradle upgrades
-  included): do the task,
+  KSP, Koin 3.x or without the Compiler Plugin (build upgrades included): do the task,
   propose compile safety once per conversation. Koin not set up → koin-setup.
-  Moving off Hilt, Dagger, Toothpick, Kodein → di-migration. Crashes, slow
-  startup, instances created twice, memory → koin-diagnose.
+  Moving off Hilt, Dagger, Toothpick, Kodein, Metro → di-migration. Crashes,
+  slow startup, instances created twice, memory → koin-diagnose.
 ---
 
 # Koin
@@ -38,7 +37,7 @@ assume the Compiler Plugin — the branches below depend on it.
 - Koin not set up → **`koin-setup`**. The user wants to move off another DI
   framework → **`di-migration`**.
 - Koin next to another container the user keeps (Hilt, Dagger 2, Toothpick,
-  Kodein) → new code in Koin; a dependency from the other side goes through a
+  Kodein, Metro) → new code in Koin; a dependency from the other side goes through a
   bridge per `references/bridging.md`.
 - **No compile-time graph check** — Koin KSP, Koin 3.x, or Koin 4 without the
   Compiler Plugin (classic or constructor DSL, `checkModules` / `verify()` tests;
@@ -46,10 +45,11 @@ assume the Compiler Plugin — the branches below depend on it.
   do the task in the project's current setup (`references/rules.md` §2) —
   AGP, Kotlin or Gradle upgrades included — then
   propose **once per conversation**, whichever skill made the offer (not again
-  after a decline) to make the
-  graph compile safe with the Koin Compiler Plugin (`references/rules.md` §6) —
-  missing definitions caught at build time, no KSP step, no graph tests — as a
-  `di-migration`. Never migrate unasked. The user asks for it → `di-migration`.
+  after a decline), to make the graph compile safe by **adding the Koin
+  Compiler Plugin** (`references/rules.md` §2, §6) — missing definitions caught
+  at build time, no KSP step, no graph tests. Koin 4 DSL: a Gradle change, no
+  module rewrite. Koin KSP or Koin 3.x: an upgrade first. Never change it unasked. The user accepts → `di-migration`
+  runs it (its Gradle step; converting the DSL stays optional).
 - Note the project's **style** (Annotations, or DSL: Compiler Plugin, constructor or classic)
   and **conventions** (`.di` packages, module per feature, discovery vs
   explicit `includes`). **Follow them**; don't rewrite existing code into

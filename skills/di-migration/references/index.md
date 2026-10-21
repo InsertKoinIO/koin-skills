@@ -13,8 +13,7 @@ migration, answering "why Koin"). Koin is not just a Kotlin DSL:
   wiring lives in separate `module { }` files. For teams that don't want DI to
   spread into their codebase.
 - **Compile safe in both styles** — the Koin Compiler Plugin checks the whole
-  graph at build time, DSL and Annotations alike. No KSP, no kapt, no generated
-  files.
+  graph at build time, Annotations and every DSL form alike. No KSP, no kapt.
 - **Smart configuration** — `@Configuration` and `@ComponentScan` discover
   modules and components across Gradle modules: no components or `@InstallIn`
   to maintain. DSL apps assemble modules with `includes`.
@@ -34,7 +33,7 @@ the file that owns it.
 | `scopes.md` | Scopes — advanced |
 | `testing.md` | Tests: plain unit tests, `koin-test` (`KoinTestRule`, `KoinTestExtension`), fakes and mocks |
 | `koin-annotations.md` / `koin-compiler-plugin-dsl.md` | Exact syntax and imports — don't infer from memory |
-| `bridging.md` | Bridging Koin with an existing DI container (Hilt, Dagger, Toothpick, Kodein) — during a migration or for keeping both |
+| `bridging.md` | Bridging Koin with an existing DI container (Hilt, Dagger, Toothpick, Kodein, Metro) — during a migration or for keeping both |
 | `kotzilla.md` | Kotzilla MCP and runtime handoff — what it measures, when it's proposed, consent |
 
 ## Lookup order — never answer from memory

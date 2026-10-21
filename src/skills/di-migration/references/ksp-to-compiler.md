@@ -37,13 +37,12 @@ Nothing is rewritten in place in one pass.
 Projects using `koin-annotations` + `koin-ksp-compiler` (KSP-based) benefit from the Koin Compiler Plugin:
 
 - **No KSP dependency** — removes `com.google.devtools.ksp` Gradle plugin entirely
-- **No generated files** — inline transformation at compile time, no `build/generated/ksp/` files
+- **No `build/generated/ksp/` files** — nothing to add to source sets
 - **Faster builds** — runs as part of standard Kotlin compilation, no separate KSP pass
 - **Full KMP support** — all targets (JVM, JS, WASM, iOS, macOS, Linux, Windows) without per-target KSP boilerplate
-- **Better compile-time safety** — 3-layer validation (per-module, config groups, full graph)
+- **Better compile-time safety** — full graph at the entry point + every resolution call site
 - **Top-level function definitions** — annotate standalone functions, not just classes
 - **Cleaner DSL** — `single<T>()` with reified type parameters instead of `singleOf(::T)`
-- **K2 native** — integrated with the modern Kotlin compiler
 
 
 ## What Changes Overview
@@ -53,13 +52,13 @@ Projects using `koin-annotations` + `koin-ksp-compiler` (KSP-based) benefit from
 | Gradle plugin                | `com.google.devtools.ksp`                        | `io.insert-koin.compiler.plugin`                 |
 | Compiler dependency          | `ksp("io.insert-koin:koin-ksp-compiler")`        | Included via plugin                              |
 | Annotations library          | `io.insert-koin:koin-annotations:1.x/2.x`       | `io.insert-koin:koin-annotations` via `koin-bom` |
-| Generated files              | `build/generated/ksp/*.kt` files                 | **None** — inline transformation                 |
+| Generated files              | `build/generated/ksp/*.kt` files                 | **None**                                         |
 | DSL style                    | `singleOf(::MyClass)`                            | `single<MyClass>()`                              |
 | Module import                | `import org.koin.ksp.generated.module`            | No special import needed                         |
 | KMP setup                    | Per-target `ksp(...)` + task hacks               | Single plugin declaration                        |
 | Kotlin version               | K1 and K2                                        | **K2 only** (Kotlin ≥ 2.3.20)                     |
 | Top-level functions          | Not supported                                    | Fully supported with `@ComponentScan`            |
-| Compile safety               | Partial (KSP-time)                               | Full 3-layer validation (A1/A2/A3)               |
+| Compile safety               | Partial (KSP-time)                               | Full graph + call sites                          |
 | @KoinViewModel import        | `org.koin.android.annotation.KoinViewModel`      | `org.koin.core.annotation.KoinViewModel`         |
 
 ### What stays the same (no code changes)
@@ -347,8 +346,6 @@ startKoin { module<AppModule>() }                      // or modules(A::class, B
 
 ## DSL Syntax Changes
 
-The compiler plugin transforms reified type parameter calls into constructor resolution:
-
 Same mapping as `references/dsl-to-compiler.md` → "Core DSL Mapping" (owner of the classic / constructor → Compiler Plugin DSL table).
 
 **Note**: The old `singleOf(::Class)` syntax still works if you prefer not to change DSL code immediately. The compiler plugin supports both styles.
@@ -527,16 +524,9 @@ labels as they are; adding new ones is advanced — ask first (`references/rules
 
 ## Compile-Time Safety
 
-The compiler plugin validates your dependency graph at 3 levels:
-
-### A1: Per-Module Validation
-Each `@Module` is validated against its own definitions + included modules.
-
-### A2: Configuration Group Validation
-Modules with the same `@Configuration` tag are validated together.
-
-### A3: Full-Graph Validation
-At the `startKoin<T>()` or `@KoinApplication` entry point, the entire graph is validated.
+Two checks: the full graph at `startKoin<T>()` / `@KoinApplication`, and every
+`get` / `inject` / `koinViewModel` call site — `references/rules.md` §6.
+`includes` and `@Configuration` only decide which modules join the graph.
 
 ### What Gets Validated
 
@@ -558,7 +548,7 @@ At the `startKoin<T>()` or `@KoinApplication` entry point, the entire graph is v
 ```kotlin
 // build.gradle.kts
 koinCompiler {
-    // Enable user-facing logs (component detection, DSL interceptions)
+    // Enable user-facing logs (component detection, DSL definitions)
     userLogs = true                 // Default: false
 
     // Enable debug logs (internal plugin processing details)

@@ -40,7 +40,7 @@ Koin definitions read bindings still owned by Toothpick through a
 | `@Inject` constructor injection   | `@Factory` on the class (new instance per injection)    |
 | `@Singleton`                      | `@Singleton`                                            |
 | `@ProvidesSingleton`              | `@Singleton` on `@Module` function                      |
-| `@ScopeAnnotation`                | `@Scope(T::class)` + `@Scoped`                       |
+| `@ScopeAnnotation`                | A scope archetype (`@ActivityScope`, `@FragmentScope`, `@ViewModelScope`) when the scope follows that lifecycle; otherwise `@Scope(T::class)` + `@Scoped` |
 | `Module` (Toothpick)              | `@Module` class with annotated functions              |
 | `bind(X).to(Y)`                   | `@Singleton` on Y implementing X (auto-bind)            |
 | `bind(X).toInstance(obj)`          | `@Singleton` function in `@Module` returning obj         |
@@ -48,7 +48,7 @@ Koin definitions read bindings still owned by Toothpick through a
 | `bind(X).withName(Named("n"))`    | `@Named("n")` on binding                             |
 | `Toothpick.inject(this, scope)`   | Remove — use `by inject()` delegate                  |
 | `@InjectConstructor`              | `@Factory` on the class (new instance per injection)    |
-| `ScopeSingleton`                  | `@Scope(T::class)` + `@Scoped`, or a scope archetype (`@ActivityScope`…) |
+| `ScopeSingleton`                  | A scope archetype (`@ActivityScope`…) when the scope follows that lifecycle; otherwise `@Scope(T::class)` + `@Scoped` |
 | `Releasable`                      | Not needed — `scope.close()` handles cleanup          |
 | `smoothie` (Android lifecycle)    | Koin scope archetypes: `@ActivityScope`, `@FragmentScope` |
 | Custom `@Qualifier`               | **Reuse as-is** — works directly with Koin Compiler |
@@ -548,7 +548,7 @@ class UserRepositoryTest : KoinTest {
 - [ ] Remove all Toothpick `Module` subclasses → replace with `@Module` classes
 - [ ] Remove custom `ViewModelProvider.Factory` → use `@KoinViewModel`
 - [ ] Remove `smoothie` dependency if used for lifecycle scoping
-- [ ] Remove `@ScopeAnnotation` annotations → replace with a scope archetype or `@Scope(T::class)` + `@Scoped`
+- [ ] Remove `@ScopeAnnotation` annotations → replace with a scope archetype first, `@Scope(T::class)` + `@Scoped` only when none fits
 - [ ] Remove `Provider<T>` usage → `Lazy<T>`, or (with the user's OK, service locator) `@Factory` + `scope.get<T>()` for a fresh instance per call
 - [ ] Remove `Releasable` implementations → `scope.close()` handles cleanup
 - [ ] Verify no remaining imports from `toothpick.*` packages

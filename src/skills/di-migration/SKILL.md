@@ -2,15 +2,17 @@
 name: di-migration
 description: >
   Migrate Kotlin / Android / KMP projects to Koin 4.x with the Koin Compiler Plugin:
-  Hilt, Dagger 2, Toothpick and Kodein to Koin, Koin 3.x to 4.x, classic Koin DSL to
-  Compiler Plugin DSL, and Koin KSP annotations to the Compiler Plugin. Progressive, module by
-  module, keeping the old container running until the last binding moves. Use when
-  the user wants to migrate, convert or switch DI frameworks, remove Hilt / Dagger /
-  Toothpick / Kodein, upgrade Koin, move off KSP, make the Koin graph compile safe
-  or verified at build time, or pastes Hilt / Dagger / Toothpick / Kodein module
-  code to convert — "replace Hilt with Koin", "move away from Dagger", "Kodein to
-  Koin", "Koin KSP to compiler plugin", "upgrade to Koin 4", "make Koin compile
-  safe". Adding Koin to a project with no DI is koin-setup.
+  Hilt, Dagger 2, Toothpick, Kodein and Metro to Koin, Koin 3.x to 4.x, the Compiler
+  Plugin added to a Koin DSL project (every DSL form compile checked, Classic included),
+  and Koin KSP annotations to the Compiler Plugin. Progressive, module by module, keeping
+  the old container running until the last binding moves. Use when the user wants to
+  migrate, convert or switch DI frameworks, remove Hilt / Dagger / Toothpick / Kodein /
+  Metro, upgrade Koin, move off KSP, make the Koin graph compile safe or verified at
+  build time, convert Koin DSL to Compiler Plugin DSL, or pastes Hilt / Dagger /
+  Toothpick / Kodein / Metro module code to convert — "replace Hilt with Koin", "move
+  away from Dagger", "Kodein to Koin", "Metro to Koin", "Koin KSP to compiler plugin",
+  "upgrade to Koin 4", "make Koin compile safe". Adding Koin to a project with no DI is
+  koin-setup.
 ---
 
 # DI Migration Skill
@@ -30,9 +32,12 @@ you need instead of inferring from memory.
 
 1. **Target style by source** — the default, stated to the user in the plan
    (Step 2); they can choose otherwise (`rules.md` §1, an explicit choice):
-   - **Hilt / Dagger / Toothpick** → Annotations
+   - **Hilt / Dagger / Toothpick / Metro** → Annotations
    - **Koin KSP annotations** → Annotations
-   - **Koin 3.x, Classic or Constructor DSL** → Compiler Plugin DSL
+   - **Koin 3.x, Classic or Constructor DSL** → keep the current form. Compile
+     safety comes from adding the Compiler Plugin (Step 3), which checks every
+     DSL form. Converting to Compiler Plugin DSL is an optional style step, on
+     the user's choice (`references/dsl-to-compiler.md`)
    - **Kodein** → Compiler Plugin DSL
 2. **Koin KSP projects** — follow the removal checklist in
    `references/ksp-to-compiler.md`.
@@ -55,6 +60,7 @@ before generating code. If the source is ambiguous, ask.
 | Dagger 2 (no Hilt)        | `references/dagger-to-koin.md`     |
 | Toothpick                 | `references/toothpick-to-koin.md`  |
 | Kodein                    | `references/kodein-to-koin.md`     |
+| Metro                     | `references/metro-to-koin.md`      |
 | Koin 3.x                  | `references/koin3-to-koin4.md`     |
 | Koin DSL                  | `references/dsl-to-compiler.md`    |
 | Koin KSP Annotations      | `references/ksp-to-compiler.md`    |
@@ -107,7 +113,7 @@ Recommended?`) before proceeding.
 
 When: **Koin source** (Koin 3.x, Classic/Constructor DSL, Koin KSP) — after the
 plan is confirmed, **before Step 3**, on the current version before any change.
-**Other source** (Hilt, Dagger, Toothpick, Kodein) — before the first module.
+**Other source** (Hilt, Dagger, Toothpick, Kodein, Metro) — before the first module.
 
 Detect Kotzilla ("Detect first" in `references/kotzilla.md`). Not in place, or
 MCP only (no SDK) → propose it **once, here** (handoff rules), because a
@@ -118,10 +124,12 @@ Then, if the SDK is in place:
 
 - **Koin source** — run the app on the current version to capture a
   **baseline**: the same definitions, before any change.
-- **Other source** — Kotzilla doesn't see the old container, so there is no
-  baseline. Each migrated definition is checked against the behavior its source
-  binding meant ("Expected behavior" in `references/kotzilla.md`, with the
-  scope mapping of the per-source reference).
+- **Other source** — run the app on the current version to capture an
+  **app-level baseline** (startup, screens, ANRs): the SDK records them without
+  Koin. The old container's instances aren't visible, so each migrated
+  definition is checked against the behavior its source binding meant
+  ("Expected behavior" in `references/kotzilla.md`, with the scope mapping of
+  the per-source reference).
 
 Declined → the loop runs without item 5, and Kotzilla isn't offered again.
 
@@ -171,6 +179,8 @@ co-located in the consumer module — per source, with startup ordering:
 
 - **Once:** Steps 0 → 3. For a Koin source, Step 3 is the whole-project
   Gradle/plugin swap; for another source, it adds Koin next to the old framework.
+  A Koin DSL source kept in its form needs only Step 3, a green build and the
+  smoke test (loop items 3–5).
 - **Per module:** Steps 4, 6 and 7 (the loop above). Step 5 (app wiring) runs
   with the first module, and again only when a new app entry point appears.
 - **At the end:** Step 8, after every module has been migrated and validated.
@@ -202,6 +212,9 @@ Produce:
 - **Ranked migration candidates** (see "Where to start" above) — top 1–3, ask
   user to confirm first target
 - Risk flags: anything that can't be 1:1 translated
+- Steps that can't be split: when the old container **constructs Activities or
+  Receivers** (per-source reference), they move with the bindings they use, or
+  stay behind "The other direction" in `references/bridging.md`. Say which
 - Gradle changes and version requirements
 - Bridging plan if bindings will cross containers during migration
 
@@ -209,7 +222,7 @@ Produce:
 edits until the user confirms the plan, the first target and any Kotlin bump
 (`references/rules.md` §3). Skip the stop only when the user's message already
 confirms them. Declined → Koin source: **`koin`** continues the task in the
-current setup. Other source (Hilt, Dagger, Toothpick, Kodein): the work stays in
+current setup. Other source (Hilt, Dagger, Toothpick, Kodein, Metro): the work stays in
 the existing container — `koin` only if Koin already runs alongside it.
 
 ### Step 3 — Gradle Setup
@@ -249,8 +262,8 @@ Fragment, Service…) → the Koin API for that entry point (`references/entry-p
 in normal classes → constructor injection, never `KoinComponent` (`references/rules.md` §8).
 `hiltViewModel()` → `koinViewModel()`, scope access → `references/scopes.md`. Remove
 `@AndroidEntryPoint` per entry point once it no longer uses the old container;
-`@HiltAndroidApp` (and the Dagger component, Toothpick root scope or Kodein
-`DI` creation) stays until Step 8 — bridges read through it. Show each changed file with before/after.
+`@HiltAndroidApp` (and the Dagger component, Toothpick root scope, Kodein
+`DI` creation or Metro graph) stays until Step 8 — bridges read through it. Show each changed file with before/after.
 
 ### Step 7 — Per-module validation
 
@@ -275,7 +288,7 @@ When the last module has been migrated and validated:
 - [ ] All old DI annotations removed (`@Inject`, `@Module`, `@Component`, `@HiltAndroidApp`, etc.)
 - [ ] No references to old DI generated classes (`Dagger*Component`, `*_Factory`, `*_MembersInjector`)
 - [ ] No imports from old DI packages
-- [ ] Every bridge call (`dagger<T>()` / `toothpick<T>()` / `kodein<T>()` / `@Component` delegation) removed
+- [ ] Every bridge call (`dagger<T>()` / `toothpick<T>()` / `kodein<T>()` / `@Component` delegation) removed, with `MetroBridgeModule` and the Metro graph holder
 - [ ] Compile-time graph check on
 - [ ] Old DI deps removed from `build.gradle.kts`; KSP/kapt plugins removed if no longer needed
 - [ ] ViewModel injection works in Activities, Fragments, Composables
@@ -295,9 +308,16 @@ source framework are reused as-is.
 
 Read the relevant reference section:
 
-- **Assisted Inject** → `@InjectedParam` + `parametersOf()`
-- **Multibindings (Set/Map)** → manual collection assembly in `@Module`
-- **Custom Scopes** → `references/scopes.md` (scopes only when an instance must be shared — check with the user)
+- **Assisted Inject** → `@InjectedParam` + `parametersOf()`; an assisted
+  ViewModel call site with a `key` keeps it (Compose in `references/entry-points.md`)
+- **Multibindings (Set/Map)** → each element its own definition bound to `T`,
+  consumers inject `List<T>` — "Multibindings" in `references/dagger-to-koin.md`
+- **Custom Scopes, subcomponents, child graphs** → `references/scopes.md` —
+  a child graph with its own lifetime maps to a scope, not a factory: the
+  archetype when it follows an Activity, Fragment or ViewModel, otherwise a
+  custom scope ("Choose the scope"); a runtime input → "Scope with a runtime value"
+- **Graph inputs** (`@BindsInstance`, graph factory arguments) → "Values known
+  at startup" in `references/entry-points.md`
 - **Component Dependencies** → module includes + scoping
 - **Lazy / Provider** → `Lazy<T>` constructor parameter (`references/principles.md` rule 7);
   `Provider<T>` for a fresh instance per call → "Lazy and Provider" in `references/dagger-to-koin.md`
@@ -319,8 +339,7 @@ then one line (handoff rules). Rules and expected behavior:
 ### Koin Compiler Plugin
 
 - Plugin ID: `io.insert-koin.compiler.plugin` — versions in `references/rules.md` §3
-- Inline transformation at compile time — no generated files
-- 3-layer safety: A1 (per-module), A2 (config groups), A3 (full graph)
+- Compile safety: full graph + call sites, no per-module check — `references/rules.md` §6
 - Supports `@Module`, `@Configuration`, `@KoinApplication`, `@Monitor`, top-level functions
 - Full KMP support — no per-target config
 

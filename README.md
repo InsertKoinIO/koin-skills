@@ -13,7 +13,7 @@ compile safe in both, for Kotlin, Android, Compose, Kotlin Multiplatform and Kto
 |-------|--------------|
 | `koin-setup` | Set up Koin in a new or legacy project, or alongside an existing DI container |
 | `koin` | Write Koin code: definitions, modules, entry points, scopes, tests — and push back on DI mistakes |
-| `di-migration` | Migrate from Hilt, Dagger, Toothpick, Kodein, Koin 3.x, classic Koin DSL or Koin KSP |
+| `di-migration` | Migrate from Hilt, Dagger, Toothpick, Kodein, Metro, Koin 3.x, classic Koin DSL or Koin KSP |
 | `koin-diagnose` | Koin errors and app behavior (startup, ANRs, scopes): static suspects, proven with Kotzilla when you opt in |
 
 ## Installation
@@ -68,8 +68,9 @@ Each [GitHub Release](https://github.com/InsertKoinIO/koin-skills/releases) atta
 | Dagger 2 (no Hilt) | Koin 4.x Annotations + Compiler Plugin |
 | Toothpick | Koin 4.x Annotations + Compiler Plugin |
 | Kodein | Koin 4.x Compiler Plugin DSL |
-| Koin 3.x | Koin 4.x Compiler Plugin DSL |
-| Koin DSL | Koin 4.x Compiler Plugin DSL |
+| Metro | Koin 4.x Annotations + Compiler Plugin |
+| Koin 3.x | Koin 4.x + Compiler Plugin (DSL kept; Compiler Plugin DSL optional) |
+| Koin DSL | Add the Compiler Plugin (DSL kept; Compiler Plugin DSL optional) |
 | Koin KSP Annotations | Koin 4.x Annotations + Compiler Plugin |
 
 > For **greenfield projects** or **manual DI / service locator** code, there's
@@ -92,11 +93,11 @@ The skills trigger on their own when a task touches dependency injection. Exampl
 
 For migrations, `di-migration` follows an **8-step workflow**: Inventory → Plan → Gradle Setup → Generate Module Code → Wire Up Application → Update Injection Sites → Per-module validation → Final Cleanup. Steps 4, 6 and 7 repeat module by module (Step 5 with the first module).
 
-**Progressive migration by default**: the skill recommends creating a new Koin module and moving definitions into it step by step — never rewriting your existing DI modules in place. While both containers run, Koin reads from the old one through bridges: `koin-dagger-bridge` (`dagger<T>()` on a Hilt `@EntryPoint`) for Hilt, `@Singleton fun` providers for plain Dagger 2, scope helpers for Toothpick and Kodein.
+**Progressive migration by default**: the skill recommends creating a new Koin module and moving definitions into it step by step — never rewriting your existing DI modules in place. While both containers run, Koin reads from the old one through bridges: `koin-dagger-bridge` (`dagger<T>()` on a Hilt `@EntryPoint`) for Hilt, `@Singleton fun` providers for plain Dagger 2, scope helpers for Toothpick and Kodein, graph accessors for Metro.
 
 ## Key Features
 
-- **Koin Compiler Plugin** (`io.insert-koin.compiler.plugin`) — compile-time dependency verification, zero generated files
+- **Koin Compiler Plugin** (`io.insert-koin.compiler.plugin`) — compile-time dependency verification for Annotations and every Koin DSL form
 - **Auto parameter resolution** — `T`, `T?`, `Lazy<T>`, `List<T>` handled automatically by the compiler
 - **Auto-bind** — a class is bound to the interfaces it implements, no explicit `binds` needed
 - **JSR-330 support** — `javax.inject.*` and `jakarta.inject.*` annotations reusable as-is

@@ -43,6 +43,36 @@ class CheckoutTest : KoinTest {
 - If a test calls `startKoin` itself, it must `stopKoin()` after — the rule and
   the extension do it for you.
 
+## Test a scope — open, replace, close
+
+Test the scope's owner: start the app graph in an isolated `koinApplication`,
+declare the startup values, override what touches the platform, assert on the
+scope registry:
+
+```kotlin
+class SessionManagerTest {
+    private val koin = koinApplication<App> {                // org.koin.plugin.module.dsl
+        koin.declare(AppConfig())                            // @Provided startup value
+        modules(module { single<Settings> { MapSettings() } })   // platform override, loaded last
+    }.koin
+
+    @AfterTest fun tearDown() = koin.close()
+
+    @Test fun opening_a_new_session_closes_the_previous_one() {
+        val previous = koin.get<SessionManager>().open("alice")
+        val current = koin.get<SessionManager>().open("bob")
+
+        assertNull(koin.getScopeOrNull("session-alice"))
+        assertNotSame(previous, current)
+    }
+}
+```
+
+- `koinApplication`, not `startKoin`: nothing global to stop between tests.
+- Call sites in tests are compile-checked too: `get<String>(qualifier<UserId>())`
+  on a value only `declare`d at runtime was seen to fail the build
+  (`[KOIN-D002]`). Assert on what the value drives (ids, keys), not the value.
+
 ## Replace a definition with a fake or a mock
 
 ```kotlin

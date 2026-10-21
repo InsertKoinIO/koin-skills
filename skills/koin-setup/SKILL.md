@@ -5,7 +5,7 @@ description: >
   Android (Views or Compose), Compose Multiplatform, KMP or Ktor project: Gradle,
   Annotations or DSL, first modules, starting Koin, compile-time verification.
   Works with no DI yet, or alongside an existing container (Toothpick, Dagger 2,
-  Hilt, Kodein) the user keeps. Use when the user wants to add
+  Hilt, Kodein, Metro) the user keeps. Use when the user wants to add
   dependency injection or a DI framework, set up a new app with DI, or says "add
   DI", "which DI framework", "add Koin", "start Koin", "Koin in KMP", "add Koin
   next to Dagger". Also for the DI part of a task in a Kotlin / Android project
@@ -34,7 +34,7 @@ Read the build files, settings and sources before anything else.
   **`koin-diagnose`** (crashes, performance).
 - Koin KSP or Koin 3.x already started → code goes to **`koin`** (it proposes
   compile safety); **`di-migration`** only when the user asks to upgrade.
-- Another DI framework (Toothpick, Dagger 2, Hilt, Kodein), and the user asked
+- Another DI framework (Toothpick, Dagger 2, Hilt, Kodein, Metro), and the user asked
   for Koin:
   - wants to **move definitions** → hand off to **`di-migration`** now: it sets
     Koin up itself (its Steps 3 and 5), in the style the source calls for.
