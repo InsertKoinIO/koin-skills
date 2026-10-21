@@ -2,14 +2,16 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-SHARED="$ROOT/shared"
-BUILD="$ROOT/build"                      # temp assembly dir — git-ignored, never committed
+SRC="$ROOT/src"
+SHARED="$SRC/shared"
+SKILLS_OUT="$ROOT/skills"                # generated, committed: the plugin is the repo root
+BUILD="$ROOT/build"                      # git-ignored: evals copy, .skill bundles, plugin zip
 PLUGIN_DIR="$BUILD/plugin"
-PLUGIN_OUT="$BUILD/koin-migration-plugin.zip"
+PLUGIN_OUT="$BUILD/koin-plugin.zip"
 
 # --- validate sources -------------------------------------------------------
 
-[[ -d "$SHARED" ]]                             || { echo "error: shared/ missing" >&2; exit 1; }
+[[ -d "$SHARED" ]]                             || { echo "error: src/shared/ missing" >&2; exit 1; }
 [[ -f "$ROOT/.claude-plugin/plugin.json" ]]      || { echo "error: .claude-plugin/plugin.json missing" >&2; exit 1; }
 [[ -f "$ROOT/.claude-plugin/marketplace.json" ]] || { echo "error: .claude-plugin/marketplace.json missing" >&2; exit 1; }
 [[ -f "$ROOT/LICENSE" ]]                       || { echo "error: LICENSE missing" >&2; exit 1; }
@@ -39,38 +41,44 @@ for p in mkt['plugins']:
 
 python3 "$ROOT/scripts/check_duplication.py" "$ROOT"
 
-# --- assemble the plugin in build/ ----------------------------------------
-# Sources stay duplication-free: skills/<name>/ holds only the skill's own
-# files, shared/ holds the shared references. build/ gets complete,
-# self-contained skills (own files + shared references).
+# --- assemble complete skills in skills/ ------------------------------------
+# Sources stay duplication-free: src/skills/<name>/ holds only the skill's own
+# files, src/shared/ the shared references. skills/ gets complete,
+# self-contained skills (own files + shared references), committed so the repo
+# root installs as is.
 
-rm -rf "$BUILD"
-mkdir -p "$PLUGIN_DIR/skills"
-cp -R "$ROOT/.claude-plugin" "$PLUGIN_DIR/"
-cp "$ROOT/README.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$PLUGIN_DIR/"
+rm -rf "$SKILLS_OUT" "$BUILD"
+mkdir -p "$SKILLS_OUT"
 
 SKILLS=()
-for dir in "$ROOT"/skills/*/; do
+for dir in "$SRC"/skills/*/; do
   [[ -f "$dir/SKILL.md" ]] || continue
   skill="$(basename "$dir")"
   SKILLS+=("$skill")
-  out="$PLUGIN_DIR/skills/$skill"
+  out="$SKILLS_OUT/$skill"
   mkdir -p "$out/references"
   (cd "$dir" && find . -type f ! -name ".DS_Store" -exec sh -c 'mkdir -p "$0/$(dirname "$1")" && cp "$1" "$0/$1"' "$out" {} \;)
   for f in "$SHARED"/*.md; do
     name="$(basename "$f")"
-    [[ -e "$dir/references/$name" ]] && { echo "error: skills/$skill/references/$name shadows shared/$name" >&2; exit 1; }
+    [[ -e "$dir/references/$name" ]] && { echo "error: src/skills/$skill/references/$name shadows src/shared/$name" >&2; exit 1; }
     cp "$f" "$out/references/$name"
   done
 done
-[[ ${#SKILLS[@]} -gt 0 ]] || { echo "error: no skills/*/SKILL.md found" >&2; exit 1; }
-echo "assembled in build/plugin: ${SKILLS[*]}"
+[[ ${#SKILLS[@]} -gt 0 ]] || { echo "error: no src/skills/*/SKILL.md found" >&2; exit 1; }
+echo "assembled in skills/: ${SKILLS[*]}"
+
+# --- copy the plugin to build/plugin (evals write their suite into it) ------
+
+mkdir -p "$PLUGIN_DIR/.claude-plugin"
+cp "$ROOT/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/icon.png" "$PLUGIN_DIR/.claude-plugin/"
+cp -R "$SKILLS_OUT" "$PLUGIN_DIR/skills"
+cp "$ROOT/README.md" "$ROOT/LICENSE" "$ROOT/CHANGELOG.md" "$PLUGIN_DIR/"
 
 # --- check that every references/*.md link resolves -------------------------
 
 missing=0
 for skill in "${SKILLS[@]}"; do
-  out="$PLUGIN_DIR/skills/$skill"
+  out="$SKILLS_OUT/$skill"
   for ref in $(grep -rhoE 'references/[a-z0-9-]+\.md' "$out" | sort -u); do
     [[ -f "$out/$ref" ]] || { echo "error: $skill links to $ref, not found" >&2; missing=1; }
   done
@@ -88,7 +96,7 @@ done
 # --- build plugin .zip (marketplace submission layout) ----------------------
 
 (cd "$PLUGIN_DIR" && zip -rq "$PLUGIN_OUT" .claude-plugin skills README.md LICENSE CHANGELOG.md)
-echo "built: build/koin-migration-plugin.zip"
+echo "built: build/koin-plugin.zip"
 
 # --- post-build check: everything copied, bundles complete -----------------
 

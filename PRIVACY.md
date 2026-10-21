@@ -1,6 +1,6 @@
 # Privacy
 
-The **koin-migration** plugin (this repository) is a static Claude Code skill
+The **koin** plugin (this repository) is a static Claude Code skill
 — prompt instructions and reference documentation that Claude reads at
 session start. It contains no executable code that runs on the user's
 machine beyond what Claude Code itself runs, and **no code paths that
@@ -31,4 +31,4 @@ this connection or transmit anything to Kotzilla.
 ## Questions
 
 Issues or questions about this document:
-https://github.com/InsertKoinIO/koin-migration/issues
+https://github.com/InsertKoinIO/koin-skills/issues

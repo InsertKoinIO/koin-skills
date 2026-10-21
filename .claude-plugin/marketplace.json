@@ -1,12 +1,12 @@
 {
-  "name": "koin-migration",
+  "name": "koin-skills",
   "owner": {
     "name": "Kotzilla",
     "url": "https://github.com/InsertKoinIO"
   },
   "plugins": [
     {
-      "name": "koin-migration",
+      "name": "koin",
       "source": "./",
       "description": "Official Koin skills: set up Koin, write Koin code, migrate from Hilt, Dagger, Toothpick, Kodein or older Koin, and diagnose Koin apps with Kotzilla. Koin 4.x with the Koin Compiler Plugin — Annotations (JSR-330 compatible) or DSL, compile safe in both, Kotlin Multiplatform."
     }

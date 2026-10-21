@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
 """Post-build check: every built skill is complete and matches its sources.
 
-For each skills/<name>/ source:
-  - build/plugin/skills/<name>/ holds every source file, byte-identical
-  - build/plugin/skills/<name>/references/ holds every shared/*.md, byte-identical
+For each src/skills/<name>/ source:
+  - skills/<name>/ holds every source file, byte-identical
+  - skills/<name>/references/ holds every src/shared/*.md, byte-identical
   - every `references/<file>.md` link in the built skill resolves
+  - build/plugin/skills/<name>/ is identical to skills/<name>/
   - build/<name>-skill.skill contains exactly the built skill's files
-  - build/koin-migration-plugin.zip contains the built skill
+  - build/koin-plugin.zip contains the built skill
   - SKILL.md frontmatter: name == folder name, description 1–1024 characters
 """
 import sys, zipfile, filecmp, re
 from pathlib import Path
 
 root = Path(sys.argv[1])
-build, shared, skills = root / "build", root / "shared", root / "skills"
-plugin = build / "plugin"
+build, shared, sources = root / "build", root / "src" / "shared", root / "src" / "skills"
+generated, plugin = root / "skills", root / "build" / "plugin"
 errors = []
 
 def files(d):
     return {p.relative_to(d).as_posix() for p in d.rglob("*") if p.is_file() and p.name != ".DS_Store"}
 
-plugin_zip = zipfile.ZipFile(build / "koin-migration-plugin.zip")
+plugin_zip = zipfile.ZipFile(build / "koin-plugin.zip")
 plugin_entries = set(plugin_zip.namelist())
 shared_files = sorted(p.name for p in shared.glob("*.md"))
 
-for src in sorted(d for d in skills.iterdir() if (d / "SKILL.md").is_file()):
-    name, out = src.name, plugin / "skills" / src.name
+for src in sorted(d for d in sources.iterdir() if (d / "SKILL.md").is_file()):
+    name, out = src.name, generated / src.name
     expected = files(src) | {f"references/{f}" for f in shared_files}
     built = files(out)
     for f in sorted(expected - built):
@@ -38,7 +39,7 @@ for src in sorted(d for d in skills.iterdir() if (d / "SKILL.md").is_file()):
     for f in shared_files:
         b = out / "references" / f
         if b.exists() and not filecmp.cmp(shared / f, b, shallow=False):
-            errors.append(f"{name}: references/{f} differs from shared/{f}")
+            errors.append(f"{name}: references/{f} differs from src/shared/{f}")
     for f in built:
         if f.endswith(".md"):
             for ref in set(re.findall(r"references/[a-z0-9-]+\.md", (out / f).read_text())):
@@ -55,16 +56,19 @@ for src in sorted(d for d in skills.iterdir() if (d / "SKILL.md").is_file()):
         desc = re.sub(r"\s+", " ", d.group(1)).strip() if d else ""
         if not desc or len(desc) > 1024:
             errors.append(f"{name}: description must be 1–1024 characters (is {len(desc)})")
+    copy = plugin / "skills" / name
+    if files(copy) != built or any(not filecmp.cmp(out / f, copy / f, shallow=False) for f in built):
+        errors.append(f"{name}: build/plugin/skills/{name} differs from skills/{name}")
     bundle = build / f"{name}-skill.skill"
     if not bundle.exists():
         errors.append(f"{name}: bundle {bundle.name} missing")
     else:
         entries = {e for e in zipfile.ZipFile(bundle).namelist() if not e.endswith("/")}
         if entries != built:
-            errors.append(f"{name}: bundle differs from build/plugin ({sorted(entries ^ built)[:5]})")
+            errors.append(f"{name}: bundle differs from skills/ ({sorted(entries ^ built)[:5]})")
     zipped = {e[len(f"skills/{name}/"):] for e in plugin_entries if e.startswith(f"skills/{name}/") and not e.endswith("/")}
     if zipped != built:
-        errors.append(f"{name}: plugin zip differs from build/plugin ({sorted(zipped ^ built)[:5]})")
+        errors.append(f"{name}: plugin zip differs from skills/ ({sorted(zipped ^ built)[:5]})")
     print(f"  {name}: {len(built)} files ({len(files(src))} own + {len(shared_files)} shared)")
 
 if errors:

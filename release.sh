@@ -53,8 +53,13 @@ fi
 # --- build ------------------------------------------------------------------
 
 ./build.sh >/dev/null
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "error: ./build.sh changed skills/ — commit the generated skills before releasing" >&2
+  git status --short >&2
+  exit 1
+fi
 SKILLS=("$ROOT"/build/*-skill.skill)
-PLUGIN="$ROOT/build/koin-migration-plugin.zip"
+PLUGIN="$ROOT/build/koin-plugin.zip"
 [[ -f "${SKILLS[0]}" ]] || { echo "error: no .skill bundles built" >&2; exit 1; }
 [[ -f "$PLUGIN" ]] || { echo "error: $PLUGIN not built" >&2; exit 1; }
 

@@ -181,7 +181,7 @@ class FeatureCoordinator(
 ## Manual module retrieval (escape hatch)
 
 ```kotlin
-import org.koin.ksp.generated.module    // generated extension property — NOT for normal use
+import org.koin.plugin.module.dsl.module
 
 startKoin {
     modules(module<MyModule>())   // reified helper — for conditional/test wiring
