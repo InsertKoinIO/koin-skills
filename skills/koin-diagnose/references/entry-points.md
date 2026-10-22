@@ -47,7 +47,7 @@ fun initApp(appConfig: AppConfig, platformConfig: KoinAppDeclaration? = null) =
 // androidMain — Application.onCreate()
 initApp(appConfig = AppConfig(debug = BuildConfig.DEBUG)) {
     androidContext(this@MainApplication)
-    koin.declare(BuildConfig.API_KEY, qualifier<ApiKey>())   // consumer: @Provided @ApiKey key: String
+    koin.declare(BuildConfig.API_URL, qualifier<ApiUrl>())   // consumer: @Provided @ApiUrl url: String
 }
 ```
 
