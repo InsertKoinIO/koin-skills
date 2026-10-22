@@ -7,10 +7,12 @@
     "name": "Kotzilla"
   },
   "homepage": "https://github.com/InsertKoinIO/koin-skills",
+  "documentationUrl": "https://insert-koin.io/docs/tooling/ai-agents/",
   "repository": "https://github.com/InsertKoinIO/koin-skills",
   "supportUrl": "https://github.com/InsertKoinIO/koin-skills/issues",
   "license": "Apache-2.0",
   "privacyPolicyUrl": "https://github.com/InsertKoinIO/koin-skills/blob/main/PRIVACY.md",
+  "termsOfServiceUrl": "https://kotzilla.io/terms-and-conditions",
   "keywords": [
     "koin",
     "dependency-injection",
