@@ -57,6 +57,13 @@ Copy the whole skill folder: each skill reads its `references/`. Update with `gi
 
 ### Other agents
 
+For Cursor, Codex, Copilot, Windsurf, Gemini and other agents that read agent skills,
+use the [skills](https://skills.sh) CLI (Node.js 22 or later):
+
+```bash
+npx skills add InsertKoinIO/koin-skills
+```
+
 Each [GitHub Release](https://github.com/InsertKoinIO/koin-skills/releases) attaches one
 `<skill>-skill.skill` archive per skill (a zip of the skill folder) and `koin-plugin.zip`.
 

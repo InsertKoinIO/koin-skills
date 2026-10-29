@@ -9,6 +9,12 @@ Install in Claude Code:
 /plugin install koin@koin-skills
 ```
 
+Install in Cursor, Codex, Copilot, Windsurf, Gemini and other agents (Node.js 22+):
+
+```
+npx skills add InsertKoinIO/koin-skills
+```
+
 ## Skills
 
 - [koin-setup](https://github.com/InsertKoinIO/koin-skills/blob/main/skills/koin-setup/SKILL.md): set up Koin in a new or legacy project, or alongside an existing DI container
