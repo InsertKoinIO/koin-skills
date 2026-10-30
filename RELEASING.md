@@ -24,6 +24,7 @@ from `src/`. A release is a version bump on `main` + a tag + a GitHub Release.
   - **MINOR** — new migration path, new feature, new reference
   - **PATCH** — fixes, wording, typo, clarifications
 - [ ] Add a matching `## [X.Y.Z] - YYYY-MM-DD` section to `CHANGELOG.md` listing user-visible changes
+- [ ] Open that section with a one-line intro (what the release is about) and the update command, before `### Added` / `### Changed`. `./release.sh` copies the section as the GitHub Release notes, so it must be final before tagging
 - [ ] Commit: `chore: release vX.Y.Z`
 
 ## Publish the release
