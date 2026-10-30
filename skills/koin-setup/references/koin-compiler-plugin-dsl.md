@@ -22,7 +22,7 @@ Gradle and versions: `references/gradle.md`. Policy (style choice, DSL forms, co
 | `Scope.create(::T)`                                                                                 | `org.koin.plugin.module.dsl.create`          | Explicit factory-function reference (alternative to `single<T>()`) |
 | `module { }` (builder lambda)                                                                       | `org.koin.dsl.module`                        | Module declaration block                                       |
 | `startKoin { modules(...) }`                                                                        | `org.koin.core.context.startKoin`            | **Classic startKoin — use this for Compiler Plugin DSL output.** The reified `startKoin<App>()` from `org.koin.plugin.module.dsl` is for `@KoinApplication` (annotations path) only. |
-| `.bind<T>()` on `KoinDefinition<*>`                                                                 | `org.koin.dsl.bind`                          | Interface binding (shorthand)                                  |
+| `bind I::class` (infix), `.bind<T>()` on `KoinDefinition<*>`                                        | `org.koin.dsl.bind`                          | Interface binding — infix by default                           |
 | `.withOptions { ... }`                                                                              | `org.koin.core.module.dsl.withOptions`       | Combine binding with other options                             |
 | `bind<T>()` inside `withOptions { }`                                                                | `org.koin.core.module.dsl.bind`              | The `BeanDefinition` form                                      |
 | `singleOf(::T)`, `factoryOf(::T)`, `viewModelOf(::T)`                                               | `org.koin.core.module.dsl.*`                 | **Constructor DSL — supported, not for new code. Prefer `single<T>()`**  |
@@ -76,19 +76,44 @@ fun buildRetrofit(client: OkHttpClient): Retrofit =
 
 ## Interface binding
 
+Infix `bind` by default (`references/rules.md` §1):
+
 ```kotlin
 val appModule = module {
-    single<RepositoryImpl>().bind<Repository>()                  // preferred
-    single<RepositoryImpl>().withOptions { bind<Repository>() }  // equivalent — use when combining with other options
+    single<RepositoryImpl>() bind Repository::class
 
     // Multiple interfaces
-    single<RepositoryImpl>()
-        .bind<Repository>()
-        .bind<Persistable>()
+    single<RepositoryImpl>() bind Repository::class bind Persistable::class
+
+    // Combined with other options
+    single<RepositoryImpl>().withOptions {
+        bind<Repository>()
+        createdAtStart()
+    }
 }
 ```
 
+`.bind<Repository>()` is equivalent — keep it where the project already uses it.
+
 ## Qualifiers
+
+**Distinct types first** (`references/principles.md` rule 10). Two
+implementations of one interface are injected by their own type — no qualifier:
+
+```kotlin
+class AuthHttpClient(val cfg: Config) : HttpClient
+class PublicHttpClient(val cfg: Config) : HttpClient
+
+class UserRepository(private val client: AuthHttpClient)   // asks for the role it needs
+
+val networkModule = module {
+    single<AuthHttpClient>()
+    single<PublicHttpClient>()
+}
+```
+
+A qualifier only when consumers must depend on the shared type, or when the
+types can't differ (one third-party class built twice):
 
 **`@Named` is the canonical Compiler Plugin DSL qualifier.** Declare it on the **class
 declaration** or on a **constructor parameter**, then use the plain reified
@@ -121,14 +146,28 @@ val networkModule = module {
 }
 ```
 
-For types you can't annotate (third-party classes), drop to classic-DSL lambda
-form — that's the only place `single<T>(named("x")) { ... }` appears legitimately:
+For types you can't annotate (third-party classes), put the qualifier on a
+function builder — `create(::fn)` registers the definition with it:
 
 ```kotlin
+@Named("authConfig")   fun authConfig(): Config = Config("...")
+@Named("publicConfig") fun publicConfig(): Config = Config("...")
+
 val networkModule = module {
-    // Classic DSL lambda — third-party type, qualifier supplied here
-    single<Config>(named("authConfig"))   { Config("...") }
-    single<Config>(named("publicConfig")) { Config("...") }
+    single { create(::authConfig) }     // registered with qualifier named("authConfig")
+    single { create(::publicConfig) }   // registered with qualifier named("publicConfig")
+}
+```
+
+A custom `@Qualifier` works the same way. A variant built from qualified
+arguments is a function builder too — the qualifier goes on the function and on
+its parameter:
+
+```kotlin
+@Auth fun authApiClient(@Named("authConfig") config: Config): ApiClient = ApiClient(config)
+
+val networkModule = module {
+    single { create(::authApiClient) }   // registered with qualifier<Auth>(), gets the authConfig Config
 }
 ```
 
@@ -177,9 +216,9 @@ the parameter type control the resolution:
 |----------------------|------------------------------------------------|
 | `T`                  | Required — compile error if missing            |
 | `T?`                 | Optional — `null` if no definition             |
-| `List<T>`            | All definitions of `T`                         |
+| `List<T>`            | All definitions of `T` (or bound to `T`) — the same class twice needs a qualifier each (`references/principles.md` rule 10) |
 | `Lazy<T>`            | Deferred — resolved on first access            |
-| Default-valued param | Skipped — Kotlin default used                  |
+| Default-valued param | Skipped — Kotlin default used, even when the graph has a definition (`skipDefaultValues`, `references/gradle.md`) |
 
 For runtime parameters, the **preferred form is `@InjectedParam` on the
 constructor** — the Compiler Plugin reads it whether the module uses annotations
@@ -200,6 +239,11 @@ val appModule = module {
 val token: SessionToken = get { parametersOf(userId) }
 val vm: DetailViewModel by viewModel { parametersOf(itemId) }
 ```
+
+**Compiler Plugin 1.2.1** — when the definition sits in another Gradle module
+than `startKoin`, `@InjectedParam` is lost and the build fails with
+`[KOIN-D001]` on the parameter type (compiler plugin issue #115, fixed in the
+next release). On 1.2.1, declare those definitions with the lambda form below.
 
 Lambda-destructuring is a fallback only for classes you can't annotate
 (third-party types with runtime params):
@@ -253,7 +297,7 @@ class App : Application() {
 
 Mixing with an annotated module (only if the user asked for it):
 `startKoin { modules(appModule); module<AnnotatedModule>() }` (`module` from
-`org.koin.plugin.module.dsl`).
+`org.koin.plugin.module.dsl`) — limits in `references/rules.md` §5.
 
 ## Retrieval
 
@@ -269,15 +313,11 @@ else, constructor injection.
 Form choice is in `references/rules.md` §1. A lambda (`single { … }`) fits when
 the definition needs a custom expression:
 
-- Qualified variants that need different constructor arguments:
-  ```kotlin
-  single<HttpClient>(qualifier<Auth>()) { HttpClient(get<Config>(qualifier<Auth>())) }
-  ```
 - Runtime parameters on a class you can't annotate: `factory { (id: String) -> … }`
 - Test overrides with hand-built fakes
 
-Third-party builders use a function builder first (`references/principles.md`
-rule 1).
+Third-party builders and qualified variants use a function builder first
+(`references/principles.md` rule 1, "Qualifiers" above).
 
 ## Not covered here
 

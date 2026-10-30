@@ -103,9 +103,9 @@ heading must agree before running `./release.sh`.
 
 ## Koin / skill content guidance
 
-- Compiler Plugin DSL interface binding: both `single<Impl>().bind<I>()` and
-  `single<Impl>().withOptions { bind<I>() }` are valid — do not "normalize" one
-  to the other
+- Compiler Plugin DSL interface binding: infix `single<Impl>() bind I::class` by
+  default; `.bind<I>()` where the project already uses it; `withOptions { bind<I>() }`
+  only when combined with other options. Don't rewrite existing code to change form
 - Progressive migration is the recommended approach everywhere: create a new
   Koin module alongside the existing DI setup, move definitions feature by
   feature, never rewrite in place

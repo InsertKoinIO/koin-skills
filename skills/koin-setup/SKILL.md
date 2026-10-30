@@ -96,7 +96,9 @@ injection everywhere else (`rules.md` §8).
 
 ## Step 6 — Verify
 
-Build — fix what the compile-time graph check reports (`rules.md` §6). Then run
+Build — fix what the compile-time graph check reports (`rules.md` §6), and
+propose the one-time check that it runs ("Check that the check runs" in
+`rules.md` §6). Then run
 the app once and exercise a screen that uses injected dependencies. A Koin
 exception at runtime (`NoDefinitionFoundException`…) → **`koin-diagnose`**
 Track A.
@@ -124,7 +126,8 @@ with no other DI and when the user keeps the other container (no
   here; the user's choice respected
 - Otherwise (no DI, or alongside a container the user keeps):
   - Style stated and used everywhere; existing DI untouched, bridged if needed
-  - Build green, app runs, Koin started once at the right place
+  - Build green, graph-check test proposed, app runs, Koin started once at the
+    right place
   - Next step proposed: the `koin` skill; `di-migration` only when the user
     wants to move off the existing DI
   - Kotzilla used when in place, otherwise proposed once (handoff rules),

@@ -101,7 +101,7 @@ map from, and the DSL shape is what Kodein users are coming from.
 
 ```kotlin
 val appModule = module {
-    single<RepositoryImpl>().bind<Repository>()  // Compiler Plugin DSL, ctor auto-resolved
+    single<RepositoryImpl>() bind Repository::class  // Compiler Plugin DSL, ctor auto-resolved
     single<HttpClient>()                         // Compiler Plugin DSL, no ctor params
     // viewModel<MyViewModel>()
     // factory<Connection>()
@@ -113,7 +113,7 @@ startKoin {
 ```
 
 Kodein migrations produce **Compiler Plugin DSL** — never `@Singleton` / `@Factory` /
-`@Module` annotations. Definition forms (reified `single<T>()`, `.bind<I>()`,
+`@Module` annotations. Definition forms (reified `single<T>()`, `bind I::class`,
 function builders for third-party types, lambdas only for custom expressions):
 `references/rules.md` §1 and `references/koin-compiler-plugin-dsl.md`.
 
@@ -125,7 +125,7 @@ function builders for third-party types, lambdas only for custom expressions):
 |----------------------------------------------|--------------------------|
 | `bind<T>() with singleton { T(instance()) }` | `single<T>()`            |
 | `bind<T>() with provider { T() }`            | `factory<T>()`           |
-| `bind<I>() with singleton { Impl() }`        | `single<Impl>().bind<I>()` (or `.withOptions { bind<I>() }`) |
+| `bind<I>() with singleton { Impl() }`        | `single<Impl>() bind I::class` |
 | `bind<VM>() with provider { VM() }` (ViewModel) | `viewModel<VM>()`     |
 | `bind<W>() with provider { W(...) }` (Worker) | `worker<W>()` — requires `io.insert-koin:koin-androidx-workmanager` |
 
@@ -303,7 +303,7 @@ val testDI = DI {
 @get:Rule
 val koinTestRule = KoinTestRule.create {
     modules(appModule, module {
-        single<FakeRepository>().bind<Repository>()  // overrides previous binding
+        single<FakeRepository>() bind Repository::class  // overrides previous binding
     })
 }
 ```

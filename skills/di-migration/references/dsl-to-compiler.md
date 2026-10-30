@@ -17,8 +17,9 @@
 12. [KMP Modules](#kmp-modules)
 13. [Compose Integration](#compose-integration)
 14. [Mixing Old and New DSL](#mixing-old-and-new-dsl)
-15. [Compile-Time Safety](#compile-time-safety)
-16. [Common Pitfalls](#common-pitfalls)
+15. [Switching from Koin Annotations](#switching-from-koin-annotations)
+16. [Compile-Time Safety](#compile-time-safety)
+17. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -61,10 +62,10 @@ Versions: `references/rules.md` §3.
 | `scoped { MyClass(get()) }`                         | `scoped<MyClass>()`                                  |
 | `scopedOf(::MyClass)`                               | `scoped<MyClass>()`                                  |
 | `worker { MyWorker(get(), get(), get()) }`          | `worker<MyWorker>()`                                 |
-| `singleOf(::Impl) { bind<Interface>() }`            | `single<Impl>().withOptions { bind<Interface>() }`   |
+| `singleOf(::Impl) { bind<Interface>() }`            | `single<Impl>() bind Interface::class`               |
 | `singleOf(::Impl) { named("x") }`                  | `@Named("x")` on the class + `single<Impl>()`        |
 | `singleOf(::Impl) { createdAtStart() }`             | `single<Impl>().withOptions { createdAtStart() }`    |
-| `single(named("x")) { Dispatchers.IO }`            | `single(named("x")) { Dispatchers.IO }` (unchanged for lambdas with custom logic) |
+| `single(named("x")) { Dispatchers.IO }`            | `@Named("x") fun ioDispatcher(): CoroutineDispatcher = Dispatchers.IO` + `single { create(::ioDispatcher) }` |
 | `module { includes(other) }`                        | `module { includes(other) }` (unchanged)              |
 
 **Key principle**: `single<T>()` with a reified type parameter tells the compiler plugin
@@ -304,7 +305,7 @@ val repoModule = module {
 ```kotlin
 // AFTER: Compiler Plugin DSL
 val repoModule = module {
-    single<UserRepositoryImpl>().withOptions { bind<UserRepository>() }
+    single<UserRepositoryImpl>() bind UserRepository::class
 }
 ```
 
@@ -320,10 +321,7 @@ val module = module {
 ```kotlin
 // AFTER: Compiler Plugin DSL
 val module = module {
-    single<ServiceImpl>().withOptions {
-        bind<ServiceA>()
-        bind<ServiceB>()
-    }
+    single<ServiceImpl>() bind ServiceA::class bind ServiceB::class
 }
 ```
 
@@ -470,6 +468,29 @@ Conversion order, when the user chose to convert:
 4. Third-party types and builders → function builder `single { create(::buildX) }`
    (`references/rules.md` §1); classic lambda only for a custom expression — it's
    compile-checked too
+
+## Switching from Koin Annotations
+
+Annotations → DSL is a style change on the same Compiler Plugin, done only on
+the user's request (`references/rules.md` §1), step by step (`rules.md` §10).
+
+- **Order** — top-down is recommended: app module and features first, core
+  last. Neither style can include the other (`rules.md` §5), so converting a
+  core module first breaks the `@Module(includes = [...])` of every annotated
+  module above it. Until the last one is converted, `startKoin` loads the
+  remaining annotated modules with `module<T>()`; run the paths that cross
+  between the two.
+- **Mapping**
+
+  | Annotations | Compiler Plugin DSL |
+  |---|---|
+  | `@Singleton` / `@Factory` / `@KoinViewModel` class | `single<T>()` / `factory<T>()` / `viewModel<T>()` + `bind I::class` for each interface it was auto-bound to |
+  | `@KoinWorker` class | `worker<T>()` |
+  | `@Scope(S::class)` + `@Scoped` class | `scope<S> { scoped<T>() }` |
+  | `@Module` function | Top-level function builder + `single { create(::fn) }`, its qualifier kept on the function |
+  | `@KoinApplication` + `startKoin<App>` | Classic `startKoin { modules(appModule) }` |
+  | `@Configuration` / `@ComponentScan` | Removed — the app module `includes(...)` each module |
+  | `@InjectedParam`, `@Named`, `@Qualifier`, `@Property` | Kept on classes and functions — `koin-annotations` stays where they're used (`references/gradle.md`) |
 
 ## Parameter Resolution
 

@@ -39,6 +39,9 @@ you need instead of inferring from memory.
      DSL form. Converting to Compiler Plugin DSL is an optional style step, on
      the user's choice (`references/dsl-to-compiler.md`)
    - **Kodein** → Compiler Plugin DSL
+   - **Koin Annotations → DSL** — not a migration path: a style change on the
+     user's request, "Switching from Koin Annotations" in
+     `references/dsl-to-compiler.md`
 2. **Koin KSP projects** — follow the removal checklist in
    `references/ksp-to-compiler.md`.
 3. **Progressive migration is universal.** Never rewrite existing DI modules in
@@ -323,6 +326,12 @@ Read the relevant reference section:
   `Provider<T>` for a fresh instance per call → "Lazy and Provider" in `references/dagger-to-koin.md`
 - **WorkManager**, **Navigation** → `references/entry-points.md`
 - **JSR-330 annotations** → handled natively by the Koin Compiler
+- **Defaulted constructor parameters** → Hilt, Dagger and Toothpick inject
+  every parameter, Metro injects a defaulted one when a binding exists; the
+  Compiler Plugin always skips it ("Parameter
+  resolution" in `references/koin-compiler-plugin-dsl.md`). For each default
+  whose type the graph provides, pass it with a function builder or drop the
+  default — otherwise the behavior changes silently
 - **Custom qualifiers** → reusable as-is
 
 ## Kotzilla

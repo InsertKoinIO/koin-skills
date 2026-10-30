@@ -48,12 +48,15 @@ Within either style:
 - **Auto-bind (Annotations)** — a `@Singleton` / `@Factory` class is bound
   automatically to every interface / abstract class it implements: no
   `binds = [...]` unless exposing a subset.
-- Both Compiler Plugin DSL interface-binding forms are valid — don't normalize one to the
-  other: `single<Impl>().bind<I>()` and `single<Impl>().withOptions { bind<I>() }`.
-- **Qualifiers** — annotations wherever a qualifier is needed: `@Named` /
-  custom `@Qualifier` on the class or the constructor parameter, in both
-  Annotations and Compiler Plugin DSL (`single<T>()` stays plain). `named("x")` is
-  classic DSL only.
+- **Interface binding (Compiler Plugin DSL)** — infix `single<Impl>() bind I::class`
+  by default. Keep `.bind<I>()` where the project already uses it; use
+  `withOptions { bind<I>() }` only to combine the binding with other options
+  (`createdAtStart()`…).
+- **Qualifiers** — distinct types first (`references/principles.md` rule 10);
+  annotations wherever a qualifier is still needed: `@Named` /
+  custom `@Qualifier` on the class, the constructor parameter or the function
+  builder, in both Annotations and Compiler Plugin DSL (`single<T>()` and
+  `single { create(::buildX) }` stay plain). `named("x")` is classic DSL only.
 
 ## 2. Compiler Plugin recommended, Koin KSP never
 
@@ -172,6 +175,10 @@ The graph is assembled explicitly.
 
 Each module keeps one style. Annotated and DSL modules load in the same
 `startKoin { }`: `modules(appModule)` then `module<AnnotatedModule>()`.
+`module<T>()` / `modules(T::class)` extend `KoinApplication`, so they work only
+inside the `startKoin { }` block — not in a `module { }`, not through a
+`KoinApplication` extension function. Neither style can include the other: a DSL module can't `includes`
+an annotated one, and `@Module(includes = [...])` can't take a DSL `val`.
 
 ## 6. Graph verification is compile-time
 
@@ -182,6 +189,19 @@ every **call site** (`get()`, `inject()`, `koinViewModel()`…). Don't write
 favor of the Compiler Plugin. Without the plugin (the user's choice, §2) there
 is no compile-time check: verify by building, then running the paths that
 resolve the definitions.
+
+**Check that the check runs** — after setup, or a change to how Koin starts,
+propose this to the user as their step (it edits their code): remove a
+definition a class needs, build, expect a `[KOIN-…]` error, restore it.
+A green build means the plugin doesn't see the modules — e.g. passed through a
+vararg (`modules(*mods)`): name the app module in `modules(...)` directly. A
+function that wraps `startKoin { modules(appModule) }` (KMP `initApp()`, §5) is
+checked normally. Until this check fails as expected, the graph isn't verified.
+
+**Multi-module DSL apps** — the full graph is checked when compiling the Gradle
+module that calls `startKoin`. Library modules have no entry point, so the
+full-graph check doesn't run when they compile — expected. That check sees another Gradle module's
+definitions only through the compile classpath (`references/gradle.md`).
 
 When the build reports a Koin compile-safety error (`[KOIN-…]`), fix what the
 report says. When it isn't enough, the Kotzilla MCP **Koin errors** workflow
@@ -226,7 +246,7 @@ target with `expect` / `actual`:
 // DSL
 expect val platformModule: Module                                     // commonMain
 actual val platformModule = module {                                  // androidMain, iosMain…
-    single<AndroidPlatform>().bind<Platform>()
+    single<AndroidPlatform>() bind Platform::class
 }
 // the common app module includes(platformModule)
 ```
