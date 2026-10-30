@@ -50,6 +50,12 @@ dependencies {
       userLogs = true            // log detected components in the build output (default: false)
   }
   ```
+- **Multi-module** — the compile-time check at the entry point (`rules.md` §6)
+  sees a Gradle module's definitions only when that module is on the entry
+  point's compile classpath. Symptom: `[KOIN-D001]` for a definition that
+  exists, declared in a module reached only through another module's
+  `implementation` dependency. Fix: expose it as `api` there, or add it as a
+  direct dependency of the entry-point module.
 - **Kotlin** — `2.3.20` or later (`rules.md` §3).
 - **Convention plugins** — when the Compiler Plugin is applied through a Gradle
   convention plugin that uses `configure<KoinGradleExtension> { … }`, the

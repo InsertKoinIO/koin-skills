@@ -3,6 +3,20 @@
 All notable changes to the **koin** plugin (successor of `koin-migration`) are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] - 2026-10-30
+
+### Changed
+- Interface binding: infix `bind I::class` by default; `.bind<I>()` when the project already uses it; `withOptions { }` only alongside other options
+- Qualifiers: distinct types first (one type per role, or a thin wrapper); when a qualifier is still needed, an annotation on the class, the constructor parameter or the function builder. Third-party types: `@Named fun x(): T` + `single { create(::x) }`; `named("x")` is Classic DSL only
+- Multibinding: binding the same class twice needs a qualifier; generic parameterizations are erased; a redefinition in the same module silently overrides
+- `koin-setup`: Step 6 proposes a graph-check test
+
+### Added
+- "Check that the check runs": modules passed as `modules(*mods)` are not checked at compile time; an `initApp()` wrapper calling `startKoin { }` is
+- Multi-module DSL apps: the graph is checked where `startKoin` is compiled; `module<T>()` / `modules(T::class)` only inside `startKoin { }`
+- Gradle: an `implementation` boundary can cause a false KOIN-D001; fix with `api` or a direct dependency
+- `di-migration`: "Switching from Koin Annotations" to the Compiler Plugin DSL (optional, top-down); defaulted constructor parameters edge case
+
 ## [2.0.0] - 2026-10-21
 
 New plugin **`koin`**, the official Koin skills, succeeding `koin-migration` (1.0.0, migration only).

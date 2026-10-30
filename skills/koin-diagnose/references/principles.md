@@ -164,11 +164,35 @@ plain function from the start function with what it needs (`koin.get()`), not a
 `parametersOf(...)` / `@InjectedParam` pass runtime values (an id, a URL from
 navigation). Dependencies always come from the graph.
 
-## 10. Qualifiers only when two definitions truly coexist
+## 10. Distinct types first, qualifiers only when two definitions truly coexist
 
-Prefer distinct types over qualifiers. When you do need one, use an annotation
-(`@Named` or a custom `@Qualifier`) on the class or the constructor parameter —
-not raw `named("x")` strings scattered across modules (classic DSL only).
+Two implementations of one type (an authenticated and a public `HttpClient`)
+are usually two roles. **Propose distinct types first**: one type per role
+(`AuthHttpClient`, `PublicHttpClient`, or a thin wrapper around a third-party
+class), consumers depend on the role they need — no qualifier, and each
+injection is checked by type.
+
+A qualifier fits when the types can't differ. Then use an annotation (`@Named`
+or a custom `@Qualifier`) on the class, the constructor parameter or the
+function builder — not raw `named("x")` strings scattered across modules
+(classic DSL only).
+
+Koin keys a definition by its class and qualifier only — once for its own
+class, once per bound type. Two cases need a distinct key on every definition:
+
+- **The same class declared more than once** (`single<SerializersModule>` for
+  each feature, collected with `List<T>` / `getAll<T>()`) — each needs its own
+  qualifier. Unqualified, they share one key and only the last one loaded is
+  kept. Different classes bound to one interface keep their own keys: `List<I>`
+  collects them all, but `get<I>()` returns the last one bound.
+- **Generic parameterizations** — `Box<String>` and `Box<Int>` are one key (type
+  arguments are erased): `get<Box<String>>()` can return the `Box<Int>` and fail
+  with a `ClassCastException`. Declare one sub-interface per parameterization
+  (`interface StringBox : Box<String>`), bind to it, and have consumers depend
+  on the sub-interface — nothing bound to `Box<…>` itself.
+
+Inside one module a duplicate key is replaced silently; `allowOverride(false)`
+only catches duplicates across modules.
 
 ## 11. Tests don't need the container
 

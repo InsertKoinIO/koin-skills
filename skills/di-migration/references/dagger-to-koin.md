@@ -316,10 +316,11 @@ class MyRepo(@IoDispatcher private val dispatcher: CoroutineDispatcher)
 ## Multibindings
 
 Koin has no Set / Map multibinding. One pattern for every source: each element
-is its own definition bound to `T`, with a distinct `@Named` (without it each
-element overrides the previous `T` binding — a startup warning, an error with
-`allowOverride(false)`). Consumers inject `List<T>`: every definition of `T`,
-empty when there is none.
+is its own definition bound to `T`, with a distinct `@Named`: required when
+elements share a class (function builders returning `T`), and it keeps a plain
+`get<T>()` from silently returning the last element — rule 10 in
+`references/principles.md`. Consumers inject `List<T>`: every definition of
+`T`, empty when there is none.
 
 | Source | Koin |
 |---|---|
