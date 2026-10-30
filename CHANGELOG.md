@@ -5,6 +5,9 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [2.0.1] - 2026-10-30
 
+Patch release: Compiler Plugin DSL guidance from real migrations, distinct types before qualifiers, and checking that the compile-time check actually runs.
+Update: `/plugin marketplace update koin-skills`.
+
 ### Changed
 - Interface binding: infix `bind I::class` by default; `.bind<I>()` when the project already uses it; `withOptions { }` only alongside other options
 - Qualifiers: distinct types first (one type per role, or a thin wrapper); when a qualifier is still needed, an annotation on the class, the constructor parameter or the function builder. Third-party types: `@Named fun x(): T` + `single { create(::x) }`; `named("x")` is Classic DSL only
