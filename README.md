@@ -1,6 +1,6 @@
 # Koin Skills
 
-[![Version](https://img.shields.io/badge/version-2.0.1-blue)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.2-blue)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](./LICENSE)
 [![Koin](https://img.shields.io/badge/Koin-4.x-orange)](https://insert-koin.io)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20%2B-purple)](https://kotlinlang.org)
@@ -139,7 +139,7 @@ yourself — the agent never does it for you.
 ## Requirements
 
 - Kotlin ≥ 2.3.20 (K2 compiler)
-- Koin ≥ 4.2.2, Koin Compiler Plugin ≥ 1.2.1 (recommended; Koin DSL also works without it)
+- Koin ≥ 4.2.2, Koin Compiler Plugin ≥ 1.2.3 (recommended; Koin DSL also works without it)
 
 ## Contributing
 

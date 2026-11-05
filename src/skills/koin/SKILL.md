@@ -32,7 +32,8 @@ lists the other shared references and the lookup order — never from memory.
 
 Read the Gradle files first (version catalog, build scripts): Koin version,
 Koin Compiler Plugin or Koin KSP (`koin-ksp-compiler`), or neither. Don't
-assume the Compiler Plugin — the branches below depend on it.
+assume the Compiler Plugin — the branches below depend on it. A Kotlin bump
+in a Compiler Plugin project → check the pair (`references/rules.md` §3).
 
 - Koin not set up → **`koin-setup`**. The user wants to move off another DI
   framework → **`di-migration`**.

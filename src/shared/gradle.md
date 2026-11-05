@@ -1,7 +1,7 @@
 # Koin Gradle Setup
 
 The one Gradle reference for every Koin skill. Versions: `references/rules.md`
-§3 (defaults + latest check on Maven Central). KSP: never (`rules.md` §2).
+§3 (latest stable on Maven Central, minimums). KSP: never (`rules.md` §2).
 
 ```kotlin
 // build.gradle.kts

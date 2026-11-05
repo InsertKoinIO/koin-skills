@@ -84,22 +84,44 @@ Compiler Plugin is a `di-migration`, proposed once per conversation by the
 
 ## 3. Versions
 
-**Default versions** (also the minimums — never output anything below):
+Koin and the Compiler Plugin release independently and often. Versions come
+from Maven Central at task time — not from these files, not from the MCP. This
+table is the floor (never output anything below) and the offline fallback:
 
-| Component             | Default     |
+| Component             | Minimum     |
 |-----------------------|-------------|
 | Kotlin                | `2.3.20` (K2) |
 | Koin                  | `4.2.2`     |
-| Koin Compiler Plugin  | `1.2.1`     |
+| Koin Compiler Plugin  | `1.2.3`     |
 
-**Always check the latest release before writing Gradle** — the `<release>`
-tag of:
+**When** — a new setup, a migration, or a task that is the upgrade. A project
+that already pins Koin and the plugin keeps its versions otherwise; a
+version-specific workaround below is the one reason to propose a bump.
+
+**Resolve the latest stable** — read the raw XML (`curl -s <url>`, or fetch
+the URL and check the list came back whole):
 
 - Koin BOM: `https://repo1.maven.org/maven2/io/insert-koin/koin-bom/maven-metadata.xml`
 - Compiler Plugin: `https://repo1.maven.org/maven2/io/insert-koin/koin-compiler-gradle-plugin/maven-metadata.xml`
 
-Use the latest release if it's newer than the default; use the defaults if
-Maven Central can't be reached. Say which source you used.
+Stable = three numbers only (`x.y.z`, no hyphen). Among the stable entries of
+the `<version>` list, the highest comparing each number (`4.10.0` > `4.9.0`),
+not the last in the list and never the `<release>` / `<latest>` tag — both can
+point at a pre-release. A pre-release only when the user asks for it. Maven
+Central unreachable → the minimums. Say which versions you used and where they
+came from.
+
+**Check the pair** — then fetch the Compiler Plugin's release notes,
+`https://github.com/InsertKoinIO/koin-compiler-plugin/releases/tag/<version>`:
+"Compatibility" lists the Koin and Kotlin versions it supports.
+The project's Kotlin older than the list → the newest plugin release that lists
+it. Newer than the list → the latest plugin, and say its notes don't list that
+Kotlin yet; a plugin crash at build is the signal to stop and report. GitHub
+unreachable → the pair is unverified; say so.
+
+**Version-specific workarounds** in these references name the release that
+fixed them ("below 1.2.3: …"). On that release or later, skip them; below it,
+propose the upgrade before the workaround.
 
 **Kotlin bump** — below Kotlin `2.3.20`, bumping Kotlin cascades: check that
 KSP (before 2.3.0 versioned `<kotlin>-<ksp>`, tied to one Kotlin version;
@@ -271,7 +293,8 @@ the app behaves. Runtime behavior is measured, not guessed: "What Kotzilla
 owns" in `references/kotzilla.md`.
 
 **Prefer MCP output over these reference files when they disagree** — the MCP
-tracks the latest releases; references are a snapshot.
+tracks the latest releases; references are a snapshot. Versions excepted:
+Maven Central, §3.
 
 ## 10. Small changes in one step, large ones step by step
 

@@ -88,7 +88,7 @@ Sub-steps of Step 3 (Gradle, whole project) and the per-module loop.
    # Check your Kotlin version in gradle.properties or build.gradle.kts
    grep -r "kotlin" gradle.properties | grep version
    ```
-2. **Koin version**: Must upgrade to the version in `references/rules.md` §3
+2. **Koin version**: Must upgrade to the latest stable per `references/rules.md` §3
 3. If you cannot upgrade Kotlin to 2.3.20, **stay on KSP** and say so — the compiler plugin requires it (`references/rules.md` §3)
 
 ### 2. Update Gradle Configuration (Step 3, all modules)

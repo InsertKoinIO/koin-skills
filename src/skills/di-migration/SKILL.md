@@ -240,8 +240,8 @@ Then produce the Gradle diff:
 1. Add Koin per `references/gradle.md` — only the artifacts the project needs.
    The old framework stays until Step 8; a Koin source swaps Koin KSP for the
    Compiler Plugin here, for the whole project (`references/ksp-to-compiler.md`)
-2. Present as a diff with the version source noted (latest Maven Central
-   release, or defaults)
+2. Present as a diff with the version source noted (latest stable on Maven
+   Central, or the §3 minimums)
 
 ### Step 4 — Generate Module Code
 

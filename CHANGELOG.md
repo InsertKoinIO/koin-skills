@@ -3,6 +3,21 @@
 All notable changes to the **koin** plugin (successor of `koin-migration`) are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.2] - 2026-11-05
+
+Patch release: versions resolved at task time, so a new Koin or Compiler Plugin release needs no skill update — and never a pre-release unless asked.
+Update: `/plugin marketplace update koin-skills`.
+
+### Changed
+- Versions (`rules.md` §3): the latest **stable** `x.y.z` from the Maven Central `<version>` list, compared number by number — never the `<release>` / `<latest>` tag, which can point at a pre-release (`4.3.0-Beta1` today). Pre-releases only on request. The table is now the floor and the offline fallback, not the default
+- Koin and Compiler Plugin checked as a pair against the plugin's release notes; project Kotlin older than the list → the newest plugin that lists it, newer → the latest plugin with a note; GitHub unreachable → said as unverified
+- A project that already pins Koin and the plugin keeps its versions, unless the task is the upgrade or a version-specific workaround applies — then the upgrade is proposed first
+- Version-specific workarounds name the release that fixed them ("below 1.2.3"): skipped on that release or later. The cross-module `@InjectedParam` `[KOIN-D001]` note (#115, #143) is now bounded to below 1.2.3
+- Versions come from Maven Central, not from the Kotzilla MCP nor the reference files
+- Compiler Plugin floor raised to `1.2.3` (false cross-module `KOIN-D001` fixed in 1.2.2 / 1.2.3)
+- `koin-diagnose`: Step 0 reads the Compiler Plugin version; a `[KOIN-…]` error on a plugin below the latest stable is checked against the version-specific notes first
+- `koin`: a Kotlin bump in a Compiler Plugin project checks the pair
+
 ## [2.0.1] - 2026-10-30
 
 Patch release: Compiler Plugin DSL guidance from real migrations, distinct types before qualifiers, and checking that the compile-time check actually runs.

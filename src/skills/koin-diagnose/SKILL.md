@@ -33,6 +33,10 @@ MCP workflows and the handoff rules.
   migration as a fix. `[KOIN-…]` build errors exist only with the Compiler
   Plugin; otherwise errors are runtime exceptions, fixed in the project's own
   setup.
+- The Compiler Plugin **version**. Below the latest stable, a `[KOIN-…]`
+  error is checked against the version-specific notes first
+  (`references/rules.md` §3): a fixed bug → propose the upgrade, not a
+  workaround.
 - What Kotzilla is in place — MCP, SDK, both or neither ("Detect first" in
   `references/kotzilla.md`). It decides how each track starts.
 - Pick the track: an **error** (compile or runtime exception) → Track A.

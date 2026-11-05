@@ -240,10 +240,11 @@ val token: SessionToken = get { parametersOf(userId) }
 val vm: DetailViewModel by viewModel { parametersOf(itemId) }
 ```
 
-**Compiler Plugin 1.2.1** — when the definition sits in another Gradle module
-than `startKoin`, `@InjectedParam` is lost and the build fails with
-`[KOIN-D001]` on the parameter type (compiler plugin issue #115, fixed in the
-next release). On 1.2.1, declare those definitions with the lambda form below.
+**Compiler Plugin below 1.2.3** — when the definition sits in another Gradle
+module than `startKoin`, `@InjectedParam` is lost and the build fails with
+`[KOIN-D001]` on the parameter type (compiler plugin issues #115, #143; 1.2.2
+still reports it for `factory<T>()` loaded under `startKoin<App>`). Propose
+the upgrade; if declined, declare those definitions with the lambda form below.
 
 Lambda-destructuring is a fallback only for classes you can't annotate
 (third-party types with runtime params):
