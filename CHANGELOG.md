@@ -3,6 +3,17 @@
 All notable changes to the **koin** plugin (successor of `koin-migration`) are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-11-09
+
+This release documents and tests Codex installation from the `koin-skills` marketplace.
+Update in Codex with `codex plugin marketplace upgrade koin-skills` followed by
+`codex plugin add koin@koin-skills`. In Claude Code, use `/plugin marketplace update koin-skills`.
+
+### Added
+
+- Codex CLI installation and update instructions for all four skills, including how to sign in to the optional Kotzilla MCP server
+- A Codex smoke test for plugin installation, skill discovery and the bundled MCP endpoint
+
 ## [2.0.2] - 2026-11-05
 
 Patch release: versions resolved at task time, so a new Koin or Compiler Plugin release needs no skill update — and never a pre-release unless asked.

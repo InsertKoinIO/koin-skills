@@ -1,6 +1,6 @@
 # Koin skills
 
-> Official agent skills for Koin, the dependency injection framework for Kotlin and Kotlin Multiplatform: set up Koin, write Koin code, migrate from Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x, and diagnose Koin apps. Packaged as the `koin` plugin for Claude Code, with the Kotzilla MCP Server bundled.
+> Official agent skills for Koin, the dependency injection framework for Kotlin and Kotlin Multiplatform: set up Koin, write Koin code, migrate from Hilt, Dagger, Toothpick, Kodein, Koin KSP or Koin 3.x, and diagnose Koin apps. Packaged as the `koin` plugin for Claude Code and Codex, with the optional Kotzilla MCP Server bundled.
 
 Install in Claude Code:
 
@@ -9,7 +9,16 @@ Install in Claude Code:
 /plugin install koin@koin-skills
 ```
 
-Install in Cursor, Codex, Copilot, Windsurf, Gemini and other agents (Node.js 22+):
+Install with the Codex CLI:
+
+```bash
+codex plugin marketplace add InsertKoinIO/koin-skills --ref main
+codex plugin add koin@koin-skills
+```
+
+In a new Codex session, select `$koin:koin-setup`, `$koin:koin`, `$koin:di-migration` or `$koin:koin-diagnose`.
+
+Install standalone skills in Cursor, Codex, Copilot, Windsurf, Gemini and other agents (Node.js 22+):
 
 ```
 npx skills add InsertKoinIO/koin-skills
@@ -39,7 +48,7 @@ npx skills add InsertKoinIO/koin-skills
 
 ## Related
 
-- [Kotzilla MCP](https://mcp.kotzilla.io/mcp): Koin knowledge, Koin error diagnosis and runtime debugging. Bundled with the plugin; without it: `claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp` in Claude Code, or this URL as an HTTP MCP server in other agents
+- [Kotzilla MCP](https://mcp.kotzilla.io/mcp): Koin knowledge, Koin error diagnosis and runtime debugging. Bundled with the plugin. Sign in with `codex mcp login kotzilla` in Codex or `/mcp` in Claude Code. With standalone skills, add this URL as an HTTP MCP server first
 - [Koin documentation for LLMs](https://insert-koin.io/llms.txt): index of the official docs
 - [Koin documentation](https://insert-koin.io/docs/intro): official docs
 - [Koin repository](https://github.com/InsertKoinIO/koin)

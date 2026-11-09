@@ -1,37 +1,35 @@
 # Privacy
 
-The **koin** plugin (this repository) is a static Claude Code skill
-— prompt instructions and reference documentation that Claude reads at
-session start. It contains no executable code that runs on the user's
-machine beyond what Claude Code itself runs, and **no code paths that
-collect, store, or transmit user data**.
+The installed **koin** plugin contains static skill instructions and reference
+documentation for Claude Code and Codex. The skills contain no executable code
+that collects, stores or transmits user data.
 
 ## What the plugin does
 
 - Provides `SKILL.md` and `references/*.md` as text files
-- These files are read by Claude Code locally when you invoke the skill
+- The client reads these files locally when you invoke a skill
 - No telemetry or analytics; the only network endpoint the plugin declares is
   the Kotzilla MCP Server (below)
 - No user code, file contents, or identifying information is sent anywhere
   by the plugin itself
 
-## What Claude Code does
+## What the client does
 
-Any network interaction (prompt submission, responses) is performed by Claude
-Code / the Anthropic API, governed by Anthropic's privacy policy:
-https://www.anthropic.com/legal/privacy
+The client handles model requests, including prompts and responses. Claude
+Code's use of the Anthropic API is covered by [Anthropic's privacy policy](https://www.anthropic.com/legal/privacy).
+Codex uses the model provider configured for the session.
 
 ## Kotzilla MCP Server
 
 The plugin declares the **Kotzilla MCP Server** (`https://mcp.kotzilla.io/mcp`)
-as an optional companion for Koin debugging and observability. Claude Code
-lists it as needing authentication and may contact the endpoint to check its
-status; no code, file contents or prompts are sent to it.
+as an optional companion for Koin debugging and observability. The client may
+contact the endpoint to check its status or discover OAuth settings before you
+sign in. These checks do not send project files or prompts to Kotzilla.
 
-Using it requires the user to sign in explicitly (OAuth, through `/mcp`) with a
-Kotzilla account. Only after that can Claude call its tools, and what those
+Using its tools requires the user to sign in with a Kotzilla account through
+`/mcp` in Claude Code or `codex mcp login kotzilla` in Codex. What the tool
 calls send is governed by Kotzilla's own privacy policy at https://kotzilla.io.
-Users who don't sign in, or disable the server in `/mcp`, never use it.
+All four skills can be used without signing in to Kotzilla.
 
 ## Questions
 
