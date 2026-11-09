@@ -75,9 +75,8 @@ state.
    Kotzilla could measure it. Accepted → used from then on in this
    conversation: don't ask again at every step.
    **Ask before installing anything. Never auto-install** — not the SDK, not
-   the MCP. The agent never runs `claude mcp add`, edits an MCP configuration
-   or signs in for the user: the user does it. The MCP bundled with the `koin`
-   plugin needs the user's sign-in (`/mcp`) before it does anything.
+   the MCP. The user adds any server configuration and signs in themselves
+   (see "Connect the MCP" for the steps in their client).
 3. **Static analysis gives suspects, Kotzilla gives proof.** Never present a
    static finding as a measured cost or a confirmed issue.
 4. **One dev run is a smoke test, not a measurement.** It proves the SDK is
@@ -133,7 +132,12 @@ agent:
 - **Claude Code without the plugin:** the user runs
   `claude mcp add kotzilla --transport http https://mcp.kotzilla.io/mcp`,
   then `/mcp` to sign in.
-- **Other agents** (Cursor, Codex, Copilot, Junie…): nothing is bundled. The
+- **Codex with the `koin` plugin:** `codex mcp get kotzilla` shows the
+  registered endpoint. To use it, the user runs `codex mcp login kotzilla`,
+  completes the browser sign-in and checks the tools with `/mcp` in the CLI.
+- **Codex with standalone skills:** the user runs
+  `codex mcp add kotzilla --url https://mcp.kotzilla.io/mcp` and signs in.
+- **Other agents** (Cursor, Copilot, Junie…): nothing is bundled. The
   user adds the same endpoint in the agent's MCP configuration, then signs in.
 
 Not connected at the handoff step → propose it (handoff rules), unless

@@ -19,3 +19,5 @@ jobs:
             git status --short -- skills
             exit 1
           fi
+      - name: Check Codex plugin installation
+        run: npx --yes --package=@openai/codex@0.167.0 -- python3 scripts/check_codex.py

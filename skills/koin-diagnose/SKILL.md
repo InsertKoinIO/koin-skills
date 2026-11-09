@@ -56,9 +56,9 @@ Works fully without Kotzilla.
    `koin_diagnose` only when the report isn't enough. **Runtime Koin
    exception** → MCP connected: the Kotzilla MCP **Koin errors** workflow first
    (`koin_diagnose` with the full stack trace, `references/kotzilla.md` — no SDK
-   needed). **Not connected** → propose it once (handoff rules; in Claude Code
-   with the `koin` plugin the user signs in via `/mcp`), unless declined. Either
-   way, check the error against the rules it most often breaks: configuration
+   needed). **Not connected** → use the handoff and sign-in steps in that
+   reference to propose it once, unless declined. Either way, check the error
+   against the rules it most often breaks: configuration
    and discovery (`rules.md` §5), module wiring (§7), qualifiers (§1),
    artifacts (`references/gradle.md`), scopes (`references/scopes.md`).
 3. One edit at a time, with the user's OK, then rebuild or re-run the failing
